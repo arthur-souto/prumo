@@ -1,0 +1,50 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--layout-nav-height);
+  padding: 0 var(--space-6);
+  background: var(--surface-card);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: var(--line-height-tight);
+}
+
+.name {
+  font-weight: var(--font-weight-medium);
+}
+
+.email {
+  color: var(--text-subtlest);
+  font-size: var(--font-size-xs);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: var(--brand-bg);
+  border-radius: var(--radius-full);
+  color: var(--text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+@media (max-width: 40rem) {
+  .identity {
+    display: none;
+  }
+}

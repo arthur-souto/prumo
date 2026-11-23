@@ -1,0 +1,35 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  min-height: 100vh;
+  padding: var(--space-8) var(--space-4);
+}
+
+.card {
+  width: 100%;
+  max-width: var(--layout-auth-width);
+  padding: var(--space-10);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+.brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-6);
+}
+
+.footer {
+  color: var(--text-subtlest);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 30rem) {
+  .card {
+    padding: var(--space-6);
+  }
+}

@@ -91,6 +91,19 @@ Quem já tem conta (por exemplo, criada com senha) vincula o GitHub estando loga
 | `POST /api/v1/users/me/identities/{provider}/link` | Inicia o vínculo |
 | `DELETE /api/v1/users/me/identities/{provider}` | Desvincula. Recusado (422) se for o único jeito de entrar na conta |
 
+### Front end (Next.js)
+
+O front fica em `frontend/` e funciona como BFF: os tokens ficam em cookies `httpOnly` e nunca chegam ao JavaScript do navegador. Todo o design vem de `frontend/src/styles/token.css`.
+
+```shell
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Telas: `/login`, `/register` e `/` (protegida). O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend.
+
 ### Banco de dados
 
 Suba o PostgreSQL local (usa o mesmo `.env`):

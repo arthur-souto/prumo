@@ -1,0 +1,18 @@
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid;
+  font-size: var(--font-size-md);
+}
+
+.danger {
+  background: var(--danger-bg-subtle);
+  border-color: var(--border-danger);
+  color: var(--text-default);
+}
+
+.info {
+  background: var(--brand-bg-subtle);
+  border-color: var(--border-focus);
+  color: var(--text-default);
+}
