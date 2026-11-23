@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: prumo
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5433/prumo_db?sslmode=disable}
+    username: ${DATASOURCE_USERNAME:app}
+    password: ${DATASOURCE_PASSWORD:app}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
