@@ -3,10 +3,15 @@ package io.github.arthursouto.prumo.infrastructure.config;
 import io.github.arthursouto.prumo.application.port.in.AuthenticateUserUseCase;
 import io.github.arthursouto.prumo.application.port.in.ExchangeOAuthCodeUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateLinkTokenUseCase;
+import io.github.arthursouto.prumo.application.port.in.CreateWorkspaceUseCase;
+import io.github.arthursouto.prumo.application.port.in.DeleteWorkspaceUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetCurrentUserUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetUserIdentitiesUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetWorkspaceUseCase;
 import io.github.arthursouto.prumo.application.port.in.LinkOAuthIdentityUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListWorkspacesUseCase;
 import io.github.arthursouto.prumo.application.port.in.UnlinkOAuthIdentityUseCase;
+import io.github.arthursouto.prumo.application.port.in.UpdateWorkspaceUseCase;
 import io.github.arthursouto.prumo.application.port.in.IssueTokensUseCase;
 import io.github.arthursouto.prumo.application.port.in.RefreshTokensUseCase;
 import io.github.arthursouto.prumo.application.port.in.RegisterUserUseCase;
@@ -17,16 +22,22 @@ import io.github.arthursouto.prumo.application.port.out.AuthorizationCodeCodecPo
 import io.github.arthursouto.prumo.application.port.out.AuthorizationCodeRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.PasswordHasherPort;
 import io.github.arthursouto.prumo.application.port.out.UserIdentityRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.RefreshTokenCodecPort;
 import io.github.arthursouto.prumo.application.port.out.RefreshTokenRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.UserRepositoryPort;
 import io.github.arthursouto.prumo.application.usecase.AuthenticateUserService;
 import io.github.arthursouto.prumo.application.usecase.ExchangeOAuthCodeService;
 import io.github.arthursouto.prumo.application.usecase.CreateLinkTokenService;
+import io.github.arthursouto.prumo.application.usecase.CreateWorkspaceService;
+import io.github.arthursouto.prumo.application.usecase.DeleteWorkspaceService;
 import io.github.arthursouto.prumo.application.usecase.GetCurrentUserService;
 import io.github.arthursouto.prumo.application.usecase.GetUserIdentitiesService;
+import io.github.arthursouto.prumo.application.usecase.GetWorkspaceService;
 import io.github.arthursouto.prumo.application.usecase.LinkOAuthIdentityService;
+import io.github.arthursouto.prumo.application.usecase.ListWorkspacesService;
 import io.github.arthursouto.prumo.application.usecase.UnlinkOAuthIdentityService;
+import io.github.arthursouto.prumo.application.usecase.UpdateWorkspaceService;
 import io.github.arthursouto.prumo.application.usecase.IssueTokensService;
 import io.github.arthursouto.prumo.application.usecase.RefreshTokensService;
 import io.github.arthursouto.prumo.application.usecase.RegisterUserService;
@@ -146,5 +157,30 @@ public class UseCaseConfig {
                                                         RefreshTokenCodecPort refreshTokenCodec,
                                                         Clock clock) {
         return new RevokeRefreshTokenService(refreshTokenRepository, refreshTokenCodec, clock);
+    }
+
+    @Bean
+    CreateWorkspaceUseCase createWorkspaceUseCase(WorkspaceRepositoryPort workspaceRepository) {
+        return new CreateWorkspaceService(workspaceRepository);
+    }
+
+    @Bean
+    ListWorkspacesUseCase listWorkspacesUseCase(WorkspaceRepositoryPort workspaceRepository) {
+        return new ListWorkspacesService(workspaceRepository);
+    }
+
+    @Bean
+    GetWorkspaceUseCase getWorkspaceUseCase(WorkspaceRepositoryPort workspaceRepository) {
+        return new GetWorkspaceService(workspaceRepository);
+    }
+
+    @Bean
+    UpdateWorkspaceUseCase updateWorkspaceUseCase(WorkspaceRepositoryPort workspaceRepository) {
+        return new UpdateWorkspaceService(workspaceRepository);
+    }
+
+    @Bean
+    DeleteWorkspaceUseCase deleteWorkspaceUseCase(WorkspaceRepositoryPort workspaceRepository) {
+        return new DeleteWorkspaceService(workspaceRepository);
     }
 }
