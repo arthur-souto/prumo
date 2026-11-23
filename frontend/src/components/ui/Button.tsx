@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import styles from "./Button.module.css";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  appearance?: "primary" | "default" | "subtle";
+  appearance?: "primary" | "default" | "subtle" | "danger";
   fullWidth?: boolean;
   loading?: boolean;
   icon?: ReactNode;

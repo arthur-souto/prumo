@@ -1,0 +1,32 @@
+.lozenge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.neutral {
+  background: var(--lozenge-neutral-bg);
+  color: var(--lozenge-neutral-text);
+}
+
+.blue {
+  background: var(--lozenge-blue-bg);
+  color: var(--lozenge-blue-text);
+}
+
+.green {
+  background: var(--lozenge-green-bg);
+  color: var(--lozenge-green-text);
+}
+
+.yellow {
+  background: var(--lozenge-yellow-bg);
+  color: var(--lozenge-yellow-text);
+}

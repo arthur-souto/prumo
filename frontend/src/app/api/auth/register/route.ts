@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
 
   if (!body) {
-    return NextResponse.json({ message: "Invalid request." }, { status: 400 });
+    return NextResponse.json({ code: "invalid" }, { status: 400 });
   }
 
   const credentials = { email: body.email, password: body.password };
@@ -17,14 +17,11 @@ export async function POST(request: Request) {
   ).catch(() => null);
 
   if (!registration) {
-    return NextResponse.json({ message: "The service is unavailable. Try again shortly." }, { status: 502 });
+    return NextResponse.json({ code: "unavailable" }, { status: 502 });
   }
 
   if (registration.status === 409) {
-    return NextResponse.json(
-      { message: "An account with this email already exists.", fields: { email: "This email is already in use." } },
-      { status: 409 },
-    );
+    return NextResponse.json({ code: "emailTaken" }, { status: 409 });
   }
 
   if (!registration.ok) {
@@ -35,7 +32,7 @@ export async function POST(request: Request) {
       fields[error.field] = error.message;
     }
 
-    return NextResponse.json({ message: "Check the highlighted fields.", fields }, { status: 400 });
+    return NextResponse.json({ code: "fixFields", fields }, { status: 400 });
   }
 
   const login = await backendFetch("/api/v1/auth/login", jsonRequest(credentials)).catch(() => null);

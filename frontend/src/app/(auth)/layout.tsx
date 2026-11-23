@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { Logo } from "@/components/ui/Logo";
+import { getT } from "@/i18n/server";
 import styles from "./auth.module.css";
 
-export default function AuthLayout({ children }: { children: ReactNode }) {
+export default async function AuthLayout({ children }: { children: ReactNode }) {
+  const { t } = await getT();
+
   return (
     <main className={styles.page}>
       <div className={styles.card}>
@@ -11,7 +15,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
         {children}
       </div>
-      <p className={styles.footer}>Prumo is open source under the MIT license.</p>
+      <div className={styles.footer}>
+        <LanguageSwitcher />
+        <p>{t("auth.footer")}</p>
+      </div>
     </main>
   );
 }

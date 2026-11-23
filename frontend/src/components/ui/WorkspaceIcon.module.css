@@ -1,0 +1,22 @@
+.icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  color: var(--color-neutral-0);
+  font-weight: var(--font-weight-bold);
+  user-select: none;
+}
+
+.sm {
+  width: 2rem;
+  height: 2rem;
+  font-size: var(--font-size-md);
+}
+
+.lg {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: var(--font-size-2xl);
+}

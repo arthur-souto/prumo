@@ -48,3 +48,22 @@
     display: none;
   }
 }
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.left a:hover {
+  text-decoration: none;
+}
+
+.link {
+  color: var(--text-subtle);
+  font-weight: var(--font-weight-medium);
+}
+
+.link:hover {
+  color: var(--text-default);
+}

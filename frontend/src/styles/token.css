@@ -91,6 +91,35 @@
   --shadow-overlay: 0 8px 12px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.31);
   --focus-ring: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--border-focus);
 
+  --color-green-200: #baf3db;
+  --color-green-800: #164b35;
+  --color-yellow-200: #f8e6a0;
+  --color-yellow-800: #533f04;
+  --color-purple-600: #6e5dc6;
+  --color-teal-600: #1d7f8c;
+  --color-orange-600: #c25100;
+  --color-magenta-600: #ae4787;
+
+  --lozenge-neutral-bg: var(--color-neutral-300);
+  --lozenge-neutral-text: var(--color-neutral-900);
+  --lozenge-blue-bg: var(--color-blue-200);
+  --lozenge-blue-text: var(--color-blue-800);
+  --lozenge-green-bg: var(--color-green-200);
+  --lozenge-green-text: var(--color-green-800);
+  --lozenge-yellow-bg: var(--color-yellow-200);
+  --lozenge-yellow-text: var(--color-yellow-800);
+
+  --avatar-1: var(--color-blue-600);
+  --avatar-2: var(--color-teal-600);
+  --avatar-3: var(--color-green-600);
+  --avatar-4: var(--color-purple-600);
+  --avatar-5: var(--color-orange-600);
+  --avatar-6: var(--color-magenta-600);
+
+  --surface-scrim: rgba(9, 30, 66, 0.54);
+  --danger-bg: var(--color-red-600);
+  --danger-bg-hover: var(--color-red-700);
+
   --logo-from: #0052cc;
   --logo-to: #2684ff;
   --logo-accent: #ffffff;
@@ -103,6 +132,15 @@
 }
 
 :root[data-theme="dark"] {
+  --lozenge-neutral-bg: #38414a;
+  --lozenge-neutral-text: #b6c2cf;
+  --lozenge-blue-bg: #092957;
+  --lozenge-blue-text: #85b8ff;
+  --lozenge-green-bg: #164b35;
+  --lozenge-green-text: #7ee2b8;
+  --lozenge-yellow-bg: #533f04;
+  --lozenge-yellow-text: #f5cd47;
+  --surface-scrim: rgba(3, 4, 4, 0.7);
   --surface-page: #1d2125;
   --surface-card: #22272b;
   --surface-sunken: #161a1d;

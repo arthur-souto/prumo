@@ -83,3 +83,12 @@
     transform: rotate(360deg);
   }
 }
+
+.danger {
+  background: var(--danger-bg);
+  color: var(--text-inverse);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--danger-bg-hover);
+}

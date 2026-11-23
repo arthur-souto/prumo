@@ -91,6 +91,20 @@ Quem já tem conta (por exemplo, criada com senha) vincula o GitHub estando loga
 | `POST /api/v1/users/me/identities/{provider}/link` | Inicia o vínculo |
 | `DELETE /api/v1/users/me/identities/{provider}` | Desvincula. Recusado (422) se for o único jeito de entrar na conta |
 
+### Workspaces
+
+| Endpoint | Descrição |
+|---|---|
+| `POST /api/v1/workspaces` | Cria um workspace (`name`, `description` opcional). Quem cria vira `OWNER`. O `slug` é gerado do nome |
+| `GET /api/v1/workspaces` | Lista os workspaces do usuário, do mais novo para o mais antigo |
+| `GET /api/v1/workspaces/{id}` | Busca um workspace. Quem não é membro recebe 404 |
+| `PUT /api/v1/workspaces/{id}` | Altera nome e descrição (o slug não muda). `OWNER` e `ADMIN`; `MEMBER` recebe 403 |
+| `DELETE /api/v1/workspaces/{id}` | Exclui o workspace e seus vínculos. Só o `OWNER`; os demais recebem 403 |
+
+Papéis por workspace: `OWNER`, `ADMIN` e `MEMBER`. Quem não é membro sempre recebe 404, para não revelar que o workspace existe. Excluir um usuário que é dono de workspace é bloqueado pelo banco: o workspace precisa ser excluído antes.
+
+No front, `/` lista os workspaces (com busca e o botão **Create workspace**) e `/workspaces/{id}` mostra os detalhes, as configurações e a exclusão com confirmação pelo nome.
+
 ### Front end (Next.js)
 
 O front fica em `frontend/` e funciona como BFF: os tokens ficam em cookies `httpOnly` e nunca chegam ao JavaScript do navegador. Todo o design vem de `frontend/src/styles/token.css`.
@@ -103,6 +117,10 @@ npm run dev
 ```
 
 Telas: `/login`, `/register` e `/` (protegida). O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend.
+
+### Idiomas
+
+O front fala inglês e português. O idioma vem do cookie `prumo_lang`; na primeira visita é escolhido pelo `Accept-Language` do navegador (qualquer variante de `pt` vira português, o resto vira inglês). O seletor fica no rodapé do login/cadastro e na barra superior. O BFF repassa o idioma ao backend, então as mensagens de validação também mudam. Os textos ficam em `frontend/src/i18n/en.ts` e `pt.ts`: para adicionar um idioma, crie o catálogo novo (o TypeScript exige as mesmas chaves do inglês) e registre-o em `core.ts`.
 
 ### Banco de dados
 

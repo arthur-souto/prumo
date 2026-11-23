@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getT } from "@/i18n/server";
+import type { MessageKey } from "@/i18n/en";
 import { getSession } from "@/lib/session";
 import { GithubButton } from "../GithubButton";
 import styles from "../AuthForm.module.css";
 import { LoginForm } from "./LoginForm";
 
-export const metadata: Metadata = { title: "Log in" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("meta.login") };
+}
 
-const OAUTH_ERRORS: Record<string, string> = {
-  email_already_registered:
-    "An account with this email already exists. Log in with your password, then link GitHub from your account settings.",
-  email_unavailable: "Your GitHub account has no verified email. Verify one on GitHub and try again.",
-  account_disabled: "This account is disabled.",
-  oauth_failed: "We could not complete the GitHub login. Try again.",
-  unsupported_provider: "This login provider is not supported.",
-};
+const OAUTH_ERRORS = [
+  "email_already_registered",
+  "email_unavailable",
+  "account_disabled",
+  "oauth_failed",
+  "unsupported_provider",
+];
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -26,17 +30,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     redirect("/");
   }
 
+  const { t } = await getT();
   const { error } = await searchParams;
-  const oauthError = error ? (OAUTH_ERRORS[error] ?? OAUTH_ERRORS.oauth_failed) : undefined;
+  const oauthError = error ? t(`auth.oauth.${OAUTH_ERRORS.includes(error) ? error : "oauth_failed"}` as MessageKey) : undefined;
 
   return (
     <>
-      <h1 className={styles.title}>Log in to continue</h1>
+      <h1 className={styles.title}>{t("auth.login.title")}</h1>
       <LoginForm oauthError={oauthError} />
-      <div className={styles.divider}>Or</div>
-      <GithubButton label="Continue with GitHub" />
+      <div className={styles.divider}>{t("auth.or")}</div>
+      <GithubButton label={t("auth.login.github")} />
       <p className={styles.switch}>
-        New to Prumo? <Link href="/register">Create an account</Link>
+        {t("auth.login.newHere")} <Link href="/register">{t("auth.login.createAccount")}</Link>
       </p>
     </>
   );
