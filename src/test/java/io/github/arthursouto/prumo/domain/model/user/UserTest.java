@@ -20,8 +20,6 @@ class UserTest {
         assertThat(user.getEmail()).isEqualTo("arthur@prumo.io");
         assertThat(user.getPasswordHash()).isEqualTo("hash");
         assertThat(user.getRole()).isEqualTo(Role.USER);
-        assertThat(user.getAuthProvider()).isEqualTo(AuthProvider.LOCAL);
-        assertThat(user.getProviderId()).isNull();
         assertThat(user.getAvatarUrl()).isNull();
         assertThat(user.isEnabled()).isTrue();
         assertThat(user.hasPassword()).isTrue();
@@ -30,20 +28,12 @@ class UserTest {
 
     @Test
     void registerExternalCreatesUserWithoutPassword() {
-        User user = User.registerExternal(
-                "Arthur",
-                "arthur@prumo.io",
-                AuthProvider.GITHUB,
-                "12345",
-                "https://avatars.example/arthur.png"
-        );
+        User user = User.registerExternal("Arthur", "arthur@prumo.io", "https://avatars.example/arthur.png");
 
         assertThat(user.getId()).isNotNull();
         assertThat(user.getPasswordHash()).isNull();
         assertThat(user.hasPassword()).isFalse();
         assertThat(user.getRole()).isEqualTo(Role.USER);
-        assertThat(user.getAuthProvider()).isEqualTo(AuthProvider.GITHUB);
-        assertThat(user.getProviderId()).isEqualTo("12345");
         assertThat(user.getAvatarUrl()).isEqualTo("https://avatars.example/arthur.png");
         assertThat(user.isEnabled()).isTrue();
     }
@@ -67,8 +57,6 @@ class UserTest {
                 "arthur@prumo.io",
                 "hash",
                 Role.ADMIN,
-                AuthProvider.LOCAL,
-                null,
                 "avatar",
                 false,
                 PAST,
@@ -80,8 +68,6 @@ class UserTest {
         assertThat(user.getEmail()).isEqualTo("arthur@prumo.io");
         assertThat(user.getPasswordHash()).isEqualTo("hash");
         assertThat(user.getRole()).isEqualTo(Role.ADMIN);
-        assertThat(user.getAuthProvider()).isEqualTo(AuthProvider.LOCAL);
-        assertThat(user.getProviderId()).isNull();
         assertThat(user.getAvatarUrl()).isEqualTo("avatar");
         assertThat(user.isEnabled()).isFalse();
         assertThat(user.getCreatedAt()).isEqualTo(PAST);
@@ -154,8 +140,6 @@ class UserTest {
                 "arthur@prumo.io",
                 null,
                 Role.USER,
-                AuthProvider.GITHUB,
-                "12345",
                 null,
                 true,
                 PAST,
@@ -172,8 +156,6 @@ class UserTest {
                 "arthur@prumo.io",
                 "hash",
                 Role.USER,
-                AuthProvider.LOCAL,
-                null,
                 null,
                 true,
                 PAST,

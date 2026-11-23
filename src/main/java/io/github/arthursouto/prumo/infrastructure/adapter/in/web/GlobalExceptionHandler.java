@@ -1,5 +1,7 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web;
 
+import io.github.arthursouto.prumo.application.exceptions.InvalidAuthorizationCodeException;
+import io.github.arthursouto.prumo.application.exceptions.InvalidRefreshTokenException;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
 import io.github.arthursouto.prumo.domain.exceptions.ConflictException;
 import io.github.arthursouto.prumo.domain.exceptions.DomainException;
@@ -39,6 +41,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidAuthorizationCodeException.class)
+    public ProblemDetail handleInvalidAuthorizationCode(InvalidAuthorizationCodeException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ProblemDetail handleInvalidRefreshToken(InvalidRefreshTokenException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
     @ExceptionHandler(ConflictException.class)

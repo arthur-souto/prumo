@@ -20,6 +20,19 @@ spring:
     hibernate:
       ddl-auto: validate
 
+app:
+  security:
+    jwt:
+      issuer: ${JWT_ISSUER:prumo}
+      private-key: ${JWT_PRIVATE_KEY_PATH:file:./keys/private.pem}
+      public-key: ${JWT_PUBLIC_KEY_PATH:file:./keys/public.pem}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+      refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:7d}
+  oauth:
+    frontend-callback-url: ${FRONTEND_OAUTH_CALLBACK_URL:http://localhost:3000/auth/callback}
+    code-ttl: ${OAUTH_CODE_TTL:60s}
+    github-api-url: ${GITHUB_API_URL:https://api.github.com}
+
 server:
   port: ${SERVER_PORT:8080}
 

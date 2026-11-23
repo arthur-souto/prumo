@@ -1,6 +1,5 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence;
 
-import io.github.arthursouto.prumo.domain.model.user.AuthProvider;
 import io.github.arthursouto.prumo.domain.model.user.User;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.UserPersistenceAdapter;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.entity.UserEntity;
@@ -79,32 +78,6 @@ class UserPersistenceAdapterTest {
         when(repository.findByEmail("missing@prumo.io")).thenReturn(Optional.empty());
 
         assertThat(adapter.findByEmail("missing@prumo.io")).isEmpty();
-    }
-
-    @Test
-    void findByProviderMapsEntityToDomain() {
-        User user = User.registerExternal(
-                "Arthur",
-                "arthur@prumo.io",
-                AuthProvider.GITHUB,
-                "12345",
-                null
-        );
-        when(repository.findByAuthProviderAndProviderId(AuthProvider.GITHUB, "12345"))
-                .thenReturn(Optional.of(UserMapper.toEntity(user)));
-
-        Optional<User> found = adapter.findByProvider(AuthProvider.GITHUB, "12345");
-
-        assertThat(found).isPresent();
-        assertThat(found.get().getProviderId()).isEqualTo("12345");
-    }
-
-    @Test
-    void findByProviderReturnsEmptyWhenMissing() {
-        when(repository.findByAuthProviderAndProviderId(AuthProvider.GITHUB, "0"))
-                .thenReturn(Optional.empty());
-
-        assertThat(adapter.findByProvider(AuthProvider.GITHUB, "0")).isEmpty();
     }
 
     @Test

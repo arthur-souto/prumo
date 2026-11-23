@@ -1,6 +1,5 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.entity;
 
-import io.github.arthursouto.prumo.domain.model.user.AuthProvider;
 import io.github.arthursouto.prumo.domain.model.user.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,13 +36,6 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "auth_provider", nullable = false)
-    private AuthProvider authProvider;
-
-    @Column(name = "provider_id")
-    private String providerId;
 
     @Column(name = "avatar_url")
     private String avatarUrl;

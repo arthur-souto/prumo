@@ -1,0 +1,2 @@
+ALTER TABLE authorization_codes ADD COLUMN purpose VARCHAR(20) NOT NULL DEFAULT 'LOGIN';
+ALTER TABLE authorization_codes ALTER COLUMN purpose DROP DEFAULT;

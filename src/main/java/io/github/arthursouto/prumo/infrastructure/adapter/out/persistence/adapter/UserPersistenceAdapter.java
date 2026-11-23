@@ -1,7 +1,6 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter;
 
 import io.github.arthursouto.prumo.application.port.out.UserRepositoryPort;
-import io.github.arthursouto.prumo.domain.model.user.AuthProvider;
 import io.github.arthursouto.prumo.domain.model.user.User;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.UserJpaRepository;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.mapper.UserMapper;
@@ -32,13 +31,6 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
     @Override
     public Optional<User> findByEmail(String email) {
         return repository.findByEmail(email).map(UserMapper::toDomain);
-    }
-
-    @Override
-    public Optional<User> findByProvider(AuthProvider authProvider, String providerId) {
-        return repository
-                .findByAuthProviderAndProviderId(authProvider, providerId)
-                .map(UserMapper::toDomain);
     }
 
     @Override

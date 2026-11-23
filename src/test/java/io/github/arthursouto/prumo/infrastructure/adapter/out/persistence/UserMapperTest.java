@@ -1,6 +1,5 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence;
 
-import io.github.arthursouto.prumo.domain.model.user.AuthProvider;
 import io.github.arthursouto.prumo.domain.model.user.Role;
 import io.github.arthursouto.prumo.domain.model.user.User;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.entity.UserEntity;
@@ -26,8 +25,6 @@ class UserMapperTest {
                 "arthur@prumo.io",
                 "hash",
                 Role.ADMIN,
-                AuthProvider.GITHUB,
-                "12345",
                 "avatar",
                 false,
                 CREATED_AT,
@@ -41,8 +38,6 @@ class UserMapperTest {
         assertThat(entity.getEmail()).isEqualTo("arthur@prumo.io");
         assertThat(entity.getPasswordHash()).isEqualTo("hash");
         assertThat(entity.getRole()).isEqualTo(Role.ADMIN);
-        assertThat(entity.getAuthProvider()).isEqualTo(AuthProvider.GITHUB);
-        assertThat(entity.getProviderId()).isEqualTo("12345");
         assertThat(entity.getAvatarUrl()).isEqualTo("avatar");
         assertThat(entity.isEnabled()).isFalse();
         assertThat(entity.getCreatedAt()).isEqualTo(CREATED_AT);
@@ -58,8 +53,6 @@ class UserMapperTest {
         entity.setEmail("arthur@prumo.io");
         entity.setPasswordHash(null);
         entity.setRole(Role.USER);
-        entity.setAuthProvider(AuthProvider.GITHUB);
-        entity.setProviderId("12345");
         entity.setAvatarUrl("avatar");
         entity.setEnabled(true);
         entity.setCreatedAt(CREATED_AT);
@@ -72,8 +65,6 @@ class UserMapperTest {
         assertThat(user.getEmail()).isEqualTo("arthur@prumo.io");
         assertThat(user.getPasswordHash()).isNull();
         assertThat(user.getRole()).isEqualTo(Role.USER);
-        assertThat(user.getAuthProvider()).isEqualTo(AuthProvider.GITHUB);
-        assertThat(user.getProviderId()).isEqualTo("12345");
         assertThat(user.getAvatarUrl()).isEqualTo("avatar");
         assertThat(user.isEnabled()).isTrue();
         assertThat(user.getCreatedAt()).isEqualTo(CREATED_AT);

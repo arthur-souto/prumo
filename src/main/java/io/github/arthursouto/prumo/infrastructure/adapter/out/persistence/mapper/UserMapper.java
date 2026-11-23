@@ -15,8 +15,6 @@ public final class UserMapper {
         entity.setEmail(user.getEmail());
         entity.setPasswordHash(user.getPasswordHash());
         entity.setRole(user.getRole());
-        entity.setAuthProvider(user.getAuthProvider());
-        entity.setProviderId(user.getProviderId());
         entity.setAvatarUrl(user.getAvatarUrl());
         entity.setEnabled(user.isEnabled());
         entity.setCreatedAt(user.getCreatedAt());
@@ -31,8 +29,6 @@ public final class UserMapper {
                 entity.getEmail(),
                 entity.getPasswordHash(),
                 entity.getRole(),
-                entity.getAuthProvider(),
-                entity.getProviderId(),
                 entity.getAvatarUrl(),
                 entity.isEnabled(),
                 entity.getCreatedAt(),

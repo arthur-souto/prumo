@@ -10,8 +10,6 @@ public final class User {
     private final String email;
     private String passwordHash;
     private Role role;
-    private final AuthProvider authProvider;
-    private final String providerId;
     private String avatarUrl;
     private boolean enabled;
     private final Instant createdAt;
@@ -22,8 +20,6 @@ public final class User {
                  String email,
                  String passwordHash,
                  Role role,
-                 AuthProvider authProvider,
-                 String providerId,
                  String avatarUrl,
                  boolean enabled,
                  Instant createdAt,
@@ -33,8 +29,6 @@ public final class User {
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
-        this.authProvider = authProvider;
-        this.providerId = providerId;
         this.avatarUrl = avatarUrl;
         this.enabled = enabled;
         this.createdAt = createdAt;
@@ -49,8 +43,6 @@ public final class User {
                 email,
                 passwordHash,
                 Role.USER,
-                AuthProvider.LOCAL,
-                null,
                 null,
                 true,
                 now,
@@ -58,11 +50,7 @@ public final class User {
         );
     }
 
-    public static User registerExternal(String name,
-                                        String email,
-                                        AuthProvider authProvider,
-                                        String providerId,
-                                        String avatarUrl) {
+    public static User registerExternal(String name, String email, String avatarUrl) {
         Instant now = Instant.now();
         return new User(
                 UUID.randomUUID(),
@@ -70,8 +58,6 @@ public final class User {
                 email,
                 null,
                 Role.USER,
-                authProvider,
-                providerId,
                 avatarUrl,
                 true,
                 now,
@@ -84,8 +70,6 @@ public final class User {
                                String email,
                                String passwordHash,
                                Role role,
-                               AuthProvider authProvider,
-                               String providerId,
                                String avatarUrl,
                                boolean enabled,
                                Instant createdAt,
@@ -96,8 +80,6 @@ public final class User {
                 email,
                 passwordHash,
                 role,
-                authProvider,
-                providerId,
                 avatarUrl,
                 enabled,
                 createdAt,
@@ -161,14 +143,6 @@ public final class User {
 
     public Role getRole() {
         return role;
-    }
-
-    public AuthProvider getAuthProvider() {
-        return authProvider;
-    }
-
-    public String getProviderId() {
-        return providerId;
     }
 
     public String getAvatarUrl() {

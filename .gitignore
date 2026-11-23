@@ -44,3 +44,5 @@ build/
 # ambiente local
 .env
 .envrc
+keys/
+*.pem
