@@ -19,7 +19,27 @@ Cada pacote tem um `package-info.java` explicando a responsabilidade dele.
 
 ## Como rodar
 
-Suba o PostgreSQL local (opcional: copie `.env.example` para `.env` e ajuste):
+### Configuração do login com GitHub
+
+O login usa OAuth com o GitHub. Cada instância do Prumo precisa do próprio OAuth App:
+
+1. Acesse https://github.com/settings/developers e clique em **New OAuth App**.
+2. Preencha:
+   - **Homepage URL:** `http://localhost:8080`
+   - **Authorization callback URL:** `http://localhost:8080/login/oauth2/code/github`
+3. Registre o app, copie o **Client ID** e gere um **Client secret**.
+4. Copie `.env.example` para `.env` e preencha:
+
+```shell
+GITHUB_CLIENT_ID=<client id>
+GITHUB_CLIENT_SECRET=<client secret>
+```
+
+O `.env` não é versionado e é lido automaticamente pela aplicação ao iniciar pela raiz do projeto. Sem essas duas variáveis a aplicação não sobe. Em produção, use outro OAuth App com a URL e o callback do domínio real.
+
+### Banco de dados
+
+Suba o PostgreSQL local (usa o mesmo `.env`):
 
 ```shell
 docker compose up -d
