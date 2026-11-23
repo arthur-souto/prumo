@@ -59,3 +59,7 @@ Regras ativas neste projeto:
 - Para aceitar as violações que já existem e barrar só as novas, envolva a regra com `FreezingArchRule.freeze(...)`.
 - Para desligar um grupo de regras, remova a classe de teste correspondente.
 # prumo
+
+## Licença
+
+Este projeto é distribuído sob a [licença MIT](LICENSE).
