@@ -14,6 +14,8 @@ function codeFor(status: number) {
       return "notFound";
     case 409:
       return "conflict";
+    case 422:
+      return "unprocessable";
     default:
       return "generic";
   }
@@ -54,5 +56,8 @@ export async function proxyToBackend(path: string, method: string, body?: unknow
     fields[error.field] = error.message;
   }
 
-  return NextResponse.json({ code: codeFor(response.status), fields }, { status: response.status });
+  return NextResponse.json(
+    { code: codeFor(response.status), reason: typeof payload?.code === "string" ? payload.code : undefined, fields },
+    { status: response.status },
+  );
 }

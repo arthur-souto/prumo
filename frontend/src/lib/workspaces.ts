@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { backendFetch } from "./backend";
 import { readAccessToken } from "./cookies";
+import type { Board, GithubConnection, Repository } from "./board-types";
 import type { Workspace } from "./workspace-types";
 
 async function authedGet(path: string) {
@@ -26,4 +27,22 @@ export async function getWorkspace(id: string): Promise<Workspace | null> {
   const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(id)}`);
 
   return response?.ok ? ((await response.json()) as Workspace) : null;
+}
+
+export async function getBoard(workspaceId: string): Promise<Board | null> {
+  const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/board`);
+
+  return response?.ok ? ((await response.json()) as Board) : null;
+}
+
+export async function listConnectedRepositories(workspaceId: string): Promise<Repository[]> {
+  const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/repositories`);
+
+  return response?.ok ? ((await response.json()) as Repository[]) : [];
+}
+
+export async function getGithubConnection(): Promise<GithubConnection> {
+  const response = await authedGet("/api/v1/github/connection");
+
+  return response?.ok ? ((await response.json()) as GithubConnection) : { connected: false, login: null, connectedAt: null };
 }

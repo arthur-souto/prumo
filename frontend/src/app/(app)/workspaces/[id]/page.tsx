@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Lozenge } from "@/components/ui/Lozenge";
-import { WorkspaceIcon } from "@/components/ui/WorkspaceIcon";
 import { requireUser } from "@/lib/session";
-import { getWorkspace } from "@/lib/workspaces";
+import { getBoard, getWorkspace } from "@/lib/workspaces";
 import { getT } from "@/i18n/server";
 import { dateLocale } from "@/i18n/core";
 import { formatDate } from "@/lib/workspace-types";
-import { TopNav } from "../../TopNav";
+import { BoardSettings } from "./BoardSettings";
+import { WorkspaceShell } from "./WorkspaceShell";
 import { WorkspaceSettings } from "./WorkspaceSettings";
 import styles from "./workspace.module.css";
 
@@ -26,32 +25,16 @@ export async function generateMetadata({ params }: WorkspacePageProps): Promise<
 export default async function WorkspacePage({ params, searchParams }: WorkspacePageProps) {
   const { id } = await params;
   const { refreshed } = await searchParams;
-  const user = await requireUser(`/workspaces/${id}`, refreshed);
-  const workspace = await getWorkspace(id);
+  await requireUser(`/workspaces/${id}`, refreshed);
+  const [workspace, board ] = await Promise.all([getWorkspace(id), getBoard(id)]);
   const { t, locale } = await getT();
 
-  if (!workspace) {
+  if (!workspace || !board) {
     notFound();
   }
 
   return (
-    <>
-      <TopNav name={user.name} email={user.email} />
-      <main className={styles.page}>
-        <nav className={styles.breadcrumb} aria-label={t("workspace.breadcrumb")}>
-          <Link href="/">{t("workspaces.title")}</Link>
-          <span aria-hidden="true">/</span>
-          <span>{workspace.name}</span>
-        </nav>
-
-        <header className={styles.header}>
-          <WorkspaceIcon id={workspace.id} name={workspace.name} size="lg" />
-          <div>
-            <h1 className={styles.title}>{workspace.name}</h1>
-            <p className={styles.slug}>{workspace.slug}</p>
-          </div>
-        </header>
-
+    <WorkspaceShell active="workspaceSettings">
         <div className={styles.grid}>
           <section className={styles.card}>
             <h2 className={styles.cardTitle}>{t("workspace.details")}</h2>
@@ -76,8 +59,15 @@ export default async function WorkspacePage({ params, searchParams }: WorkspaceP
             canEdit={workspace.role === "OWNER" || workspace.role === "ADMIN"}
             canDelete={workspace.role === "OWNER"}
           />
+
+          <BoardSettings
+            workspaceId={workspace.id}
+            keyPrefix={board.keyPrefix}
+            automationEnabled={board.automationEnabled}
+            hasStories={board.stories.length > 0}
+            canEdit={workspace.role === "OWNER" || workspace.role === "ADMIN"}
+          />
         </div>
-      </main>
-    </>
+    </WorkspaceShell>
   );
 }

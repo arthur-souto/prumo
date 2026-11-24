@@ -3,6 +3,7 @@ export type ApiResult<T> = {
   status: number;
   data: T | null;
   code: string;
+  reason?: string;
   fields: Record<string, string>;
 };
 
@@ -24,6 +25,7 @@ export async function sendJson<T>(url: string, method: string, body?: unknown): 
     status: response?.status ?? 0,
     data: response?.ok ? (data as T) : null,
     code: response ? (data?.code ?? "generic") : "unavailable",
+    reason: data?.reason,
     fields: data?.fields ?? {},
   };
 }

@@ -45,11 +45,35 @@ const KNOWN_ERRORS = [
   "forbidden",
   "notFound",
   "conflict",
+  "unprocessable",
   "invalid",
   "generic",
 ] as const;
 
-export function errorMessage(t: Translate, code: string) {
+const GITHUB_REASONS = [
+  "MISSING_TOKEN",
+  "INVALID_TOKEN",
+  "PERMISSION_DENIED",
+  "RATE_LIMITED",
+  "NOT_FOUND",
+  "BRANCH_EXISTS",
+  "REPOSITORY_EXISTS",
+  "UNAVAILABLE",
+  "NOT_CONFIGURED",
+  "UNEXPECTED",
+] as const;
+
+export function githubReason(t: Translate, reason: string) {
+  return (GITHUB_REASONS as readonly string[]).includes(reason)
+    ? t(`githubErrors.${reason}` as MessageKey)
+    : t("errors.generic");
+}
+
+export function errorMessage(t: Translate, code: string, reason?: string) {
+  if (reason && (GITHUB_REASONS as readonly string[]).includes(reason)) {
+    return githubReason(t, reason);
+  }
+
   const known = (KNOWN_ERRORS as readonly string[]).includes(code) ? code : "generic";
 
   return t(`errors.${known}` as MessageKey);

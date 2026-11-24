@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { TextArea } from "@/components/ui/TextArea";
 import { TextField } from "@/components/ui/TextField";
@@ -26,7 +27,7 @@ export function WorkspaceSettings({ id, name, description, canEdit, canDelete }:
   const [error, setError] = useState<string>();
   const [fields, setFields] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
   const [confirming, setConfirming] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -36,7 +37,6 @@ export function WorkspaceSettings({ id, name, description, canEdit, canDelete }:
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     setSaving(true);
-    setSaved(false);
     setError(undefined);
     setFields({});
 
@@ -48,7 +48,7 @@ export function WorkspaceSettings({ id, name, description, canEdit, canDelete }:
     setSaving(false);
 
     if (result.ok) {
-      setSaved(true);
+      toast({ tone: "success", title: t("workspace.saved") });
       router.refresh();
       return;
     }
@@ -78,7 +78,7 @@ export function WorkspaceSettings({ id, name, description, canEdit, canDelete }:
   }
 
   return (
-    <div className={styles.form}>
+    <div className={styles.cards}>
       {canEdit ? (
         <section className={styles.card}>
           <h2 className={styles.cardTitle}>{t("workspace.settings")}</h2>
@@ -87,7 +87,6 @@ export function WorkspaceSettings({ id, name, description, canEdit, canDelete }:
             <TextField label={t("workspace.name")} name="name" defaultValue={name} maxLength={100} error={fields.name} required />
             <TextArea label={t("workspace.description")} name="description" defaultValue={description ?? ""} maxLength={500} error={fields.description} />
             <div className={styles.actions}>
-              {saved ? <span className={styles.saved}>{t("workspace.saved")}</span> : null}
               <Button type="submit" appearance="primary" loading={saving}>
                 {t("workspace.save")}
               </Button>
