@@ -18,6 +18,7 @@ public final class SubtaskMapper {
         entity.setTitle(subtask.getTitle());
         entity.setDescription(subtask.getDescription());
         entity.setStatus(subtask.getStatus());
+        entity.setStatusSource(subtask.getStatusSource());
         entity.setPosition(subtask.getPosition());
         entity.setBranchName(subtask.getBranchName());
         entity.setCreatedAt(subtask.getCreatedAt());
@@ -39,6 +40,6 @@ public final class SubtaskMapper {
                 entity.getBranchName(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
-        );
+        ).withStatusSource(entity.getStatusSource());
     }
 }

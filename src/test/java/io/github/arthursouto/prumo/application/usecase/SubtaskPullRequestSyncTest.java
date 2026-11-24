@@ -13,6 +13,7 @@ import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.github.GithubConnection;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.Subtask;
@@ -188,7 +189,14 @@ class SubtaskPullRequestSyncTest {
         syncer.sync(repository);
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
         assertThat(story.getColumnId()).isEqualTo(board.first().getId());
+    }
+
+    @Test
+    void aSubtaskNeverTouchedByTheAutomationKeepsTheUserAsTheSource() {
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.USER);
+        assertThat(sibling.getStatusSource()).isEqualTo(ChangeSource.USER);
     }
 
     @Test
@@ -213,7 +221,9 @@ class SubtaskPullRequestSyncTest {
         syncer.sync(repository);
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
         assertThat(story.getColumnId()).isEqualTo(board.ofKind(ColumnKind.DONE).orElseThrow().getId());
+        assertThat(story.getColumnSource()).isEqualTo(ChangeSource.GITHUB);
     }
 
     @Test
@@ -237,6 +247,7 @@ class SubtaskPullRequestSyncTest {
         syncer.sync(repository);
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_PROGRESS);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
         verify(subtaskRepository).save(subtask);
         assertThat(story.getColumnId()).isEqualTo(board.first().getId());
     }

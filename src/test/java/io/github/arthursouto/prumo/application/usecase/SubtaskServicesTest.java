@@ -25,6 +25,7 @@ import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.github.GithubConnection;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.Subtask;
@@ -307,6 +308,17 @@ class SubtaskServicesTest {
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
         assertThat(story.getColumnId()).isEqualTo(board.first().getId());
         verify(storyRepository, never()).save(any(UserStory.class));
+    }
+
+    @Test
+    void aChangeMadeOnTheBoardTakesTheStatusBackFromGithubToTheUser() {
+        Subtask subtask = existing(13, SubtaskStatus.TO_DO);
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW, ChangeSource.GITHUB);
+
+        changeStatus("PRU-13", SubtaskStatus.DONE);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.USER);
     }
 
     @Test

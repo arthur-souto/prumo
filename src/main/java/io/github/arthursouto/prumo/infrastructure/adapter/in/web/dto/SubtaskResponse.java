@@ -1,6 +1,7 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto;
 
 import io.github.arthursouto.prumo.application.port.in.result.SubtaskView;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.Subtask;
 import io.github.arthursouto.prumo.domain.model.story.SubtaskStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +18,7 @@ public record SubtaskResponse(
         String title,
         String description,
         SubtaskStatus status,
+        @Schema(description = "Who last changed the status: USER on the board, or GITHUB for the pull request sync") ChangeSource statusSource,
         int position,
         String branchName,
         List<StoryResponse.PullRequestResponse> pullRequests,
@@ -34,6 +36,7 @@ public record SubtaskResponse(
                 subtask.getTitle(),
                 subtask.getDescription(),
                 subtask.getStatus(),
+                subtask.getStatusSource(),
                 subtask.getPosition(),
                 subtask.getBranchName(),
                 view.pullRequests().stream().map(StoryResponse.PullRequestResponse::from).toList(),

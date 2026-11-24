@@ -15,6 +15,7 @@ import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.github.GithubConnection;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
@@ -178,6 +179,7 @@ class PullRequestSyncerTest {
         syncer.sync(repository);
 
         assertThat(story.getColumnId()).isEqualTo(BoardFixtures.column(board, ColumnKind.IN_REVIEW).getId());
+        assertThat(story.getColumnSource()).isEqualTo(ChangeSource.GITHUB);
         verify(storyRepository).save(story);
     }
 
