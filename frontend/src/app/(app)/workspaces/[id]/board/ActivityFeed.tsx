@@ -2,6 +2,7 @@
 
 import { Bot } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Avatar } from "@/components/ui/Avatar";
 import { useI18n } from "@/i18n/client";
 import { sendJson } from "@/lib/client";
 import type { ActivityEntry, SubtaskStatus } from "@/lib/board-types";
@@ -74,8 +75,34 @@ export function ActivityFeed({ workspaceId, scope, version }: ActivityFeedProps)
     }
   }
 
-  function when(value: string) {
-    return new Date(value).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" });
+  function time(value: string) {
+    return new Date(value).toLocaleTimeString(locale, { timeStyle: "short" });
+  }
+
+  function exact(value: string) {
+    return new Date(value).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
+  }
+
+  /** "today" and "yesterday" in the user's language, or the weekday and date for older days. */
+  function dayLabel(day: Date) {
+    const start = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const ago = Math.round((start(new Date()) - start(day)) / 86_400_000);
+
+    if (ago >= 0 && ago <= 1) {
+      return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-ago, "day");
+    }
+
+    return day.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  const days = new Map<string, { label: string; entries: ActivityEntry[] }>();
+
+  for (const entry of entries ?? []) {
+    const day = new Date(entry.createdAt);
+    const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+    const group = days.get(key) ?? { label: dayLabel(day), entries: [] };
+    group.entries.push(entry);
+    days.set(key, group);
   }
 
   return (
@@ -83,27 +110,37 @@ export function ActivityFeed({ workspaceId, scope, version }: ActivityFeedProps)
       <h3 className={styles.title}>{t("activity.title")}</h3>
       {failed && entries === null ? <p className={styles.hint}>{t("activity.failed")}</p> : null}
       {entries !== null && entries.length === 0 ? <p className={styles.hint}>{t("activity.empty")}</p> : null}
-      <ol className={styles.list}>
-        {(entries ?? []).map((entry) => (
-          <li key={entry.id} className={styles.item} data-source={entry.source}>
-            <span className={styles.text}>
-              <strong className={styles.actor}>
-                {entry.source === "GITHUB" ? (
-                  <>
-                    <Bot size={14} aria-hidden="true" /> {t("activity.github")}
-                  </>
-                ) : (
-                  (entry.actorName ?? t("activity.someone"))
-                )}
-              </strong>{" "}
-              {describe(entry)}
-            </span>
-            <time className={styles.time} dateTime={entry.createdAt}>
-              {when(entry.createdAt)}
-            </time>
-          </li>
+      <div className={styles.timeline}>
+        {[...days.entries()].map(([key, day]) => (
+          <div key={key} className={styles.day}>
+            <h4 className={styles.dayLabel}>{day.label}</h4>
+            <ol className={styles.list}>
+              {day.entries.map((entry) => (
+                <li key={entry.id} className={styles.item} data-source={entry.source}>
+                  <span className={styles.marker}>
+                    {entry.source === "GITHUB" ? (
+                      <span className={styles.bot} role="img" aria-label={t("activity.github")}>
+                        <Bot size={14} aria-hidden="true" />
+                      </span>
+                    ) : (
+                      <Avatar name={entry.actorName ?? t("activity.someone")} seed={entry.actorId ?? undefined} size="sm" />
+                    )}
+                  </span>
+                  <span className={styles.text}>
+                    <strong className={styles.actor}>
+                      {entry.source === "GITHUB" ? t("activity.github") : (entry.actorName ?? t("activity.someone"))}
+                    </strong>{" "}
+                    {describe(entry)}
+                  </span>
+                  <time className={styles.time} dateTime={entry.createdAt} title={exact(entry.createdAt)}>
+                    {time(entry.createdAt)}
+                  </time>
+                </li>
+              ))}
+            </ol>
+          </div>
         ))}
-      </ol>
+      </div>
     </section>
   );
 }
