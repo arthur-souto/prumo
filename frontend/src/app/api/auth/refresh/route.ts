@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { backendFetch, jsonRequest, type TokenPayload } from "@/lib/backend";
 import { clearSession, readRefreshToken, writeSession } from "@/lib/cookies";
+import { refreshTokens } from "@/lib/refresh";
 import { safeRedirectPath } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
@@ -11,16 +11,14 @@ export async function GET(request: NextRequest) {
     return clearSession(NextResponse.redirect(loginUrl));
   }
 
-  const response = await backendFetch("/api/v1/auth/refresh", jsonRequest({ refresh_token: refreshToken })).catch(
-    () => null,
-  );
+  const result = await refreshTokens(refreshToken);
 
-  if (!response?.ok) {
+  if (result.kind !== "renewed") {
     return clearSession(NextResponse.redirect(loginUrl));
   }
 
   const next = new URL(safeRedirectPath(request.nextUrl.searchParams.get("next")), request.url);
   next.searchParams.set("refreshed", "1");
 
-  return writeSession(NextResponse.redirect(next), (await response.json()) as TokenPayload);
+  return writeSession(NextResponse.redirect(next), result.tokens);
 }

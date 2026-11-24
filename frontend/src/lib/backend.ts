@@ -1,7 +1,8 @@
 import { backendLanguage } from "@/i18n/core";
 import { getLocale } from "@/i18n/server";
+import { internalBackendUrl } from "./backend-url";
 
-const internalUrl = process.env.BACKEND_URL ?? "http://localhost:8080";
+const internalUrl = internalBackendUrl;
 
 export const publicBackendUrl = process.env.BACKEND_PUBLIC_URL ?? internalUrl;
 

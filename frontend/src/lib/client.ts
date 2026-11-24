@@ -15,7 +15,7 @@ export async function sendJson<T>(url: string, method: string, body?: unknown): 
   }).catch(() => null);
 
   if (response?.status === 401) {
-    window.location.assign(`/api/auth/refresh?next=${encodeURIComponent(window.location.pathname)}`);
+    window.location.assign(`/api/auth/refresh?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
   }
 
   const data = response && response.status !== 204 ? await response.json().catch(() => null) : null;
