@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Markdown } from "@/components/ui/Markdown";
 import { Select } from "@/components/ui/Select";
 import { ActivityFeed } from "../../board/ActivityFeed";
+import { Comments } from "../../board/Comments";
 import { GithubOrigin } from "../../board/GithubOrigin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { TextArea } from "@/components/ui/TextArea";
@@ -161,6 +162,8 @@ export function SubtaskView({ workspaceId, initial, storyTitle, repository, canB
               <PullRequestList pullRequests={subtask.pullRequests} />
             )}
           </section>
+
+          <Comments workspaceId={workspaceId} scope={`subtasks/${subtask.key}`} />
 
           <ActivityFeed workspaceId={workspaceId} scope={`subtasks/${subtask.key}`} version={`${subtask.updatedAt}|${subtask.status}`} />
 

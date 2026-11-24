@@ -113,3 +113,16 @@ export type ActivityEntry = {
   to: string | null;
   createdAt: string;
 };
+
+export type Comment = {
+  id: string;
+  authorId: string | null;
+  authorName: string | null;
+  authorAvatarUrl: string | null;
+  subtaskKey: string | null;
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  /** True when the caller wrote it, and so can edit or delete it. */
+  mine: boolean;
+};
