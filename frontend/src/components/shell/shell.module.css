@@ -192,6 +192,13 @@
   position: relative;
 }
 
+/* Pages longer than the screen scroll here, so the shell never grows past the visible area. */
+.mainScroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .scrim {
   display: none;
 }
@@ -381,10 +388,10 @@
 }
 
 
-/* Pages that fill the window (the board), on every screen size: the shell is pinned to the four edges of the screen and
+/* Every page, on every screen size: the shell is pinned to the four edges of the screen and
    the grid hands the rest to <main>. Pinning (instead of 100vh/100dvh) works on any browser, including older tablets
-   without dvh, and follows the visible area when the browser toolbars show and hide. The cards scroll inside their
-   columns and the columns scroll sideways. */
+   without dvh, and follows the visible area when the browser toolbars show and hide. The board's cards scroll inside
+   their columns and the columns sideways; the other pages scroll inside <main> (.mainScroll). */
 .appFill {
   position: fixed;
   top: 0;
