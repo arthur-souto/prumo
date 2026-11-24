@@ -359,7 +359,7 @@ export const en = {
     keyPrefix: "Story key prefix",
     keyPrefixHint: "Stories look like PRU-12. It cannot change after the first story.",
     automation: "Move stories with pull requests",
-    automationHint: "An open pull request moves its subtask to In Review (or the story, when it cites only the story). A merged one moves it to Done.",
+    automationHint: "An open pull request moves its subtask to In Review (or the story, when it cites only the story). A merged one moves it to Done. One closed without merging sends it back to In Progress. Off by default, and only for this workspace.",
     consolidate: "Finish stories when all subtasks are done",
     consolidateHint: "When the last subtask is done, the story moves to Done. Moving a story by hand always wins.",
     save: "Save board settings",

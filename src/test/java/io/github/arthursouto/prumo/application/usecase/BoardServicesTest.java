@@ -158,6 +158,17 @@ class BoardServicesTest {
     }
 
     @Test
+    void ownersCanTurnPullRequestAutomationOnAndOffAndOmittingItKeepsIt() {
+        when(boardRepository.save(any(Board.class))).thenAnswer(call -> call.getArgument(0));
+        UpdateBoardSettingsService service = new UpdateBoardSettingsService(access, provisioner, boardRepository, storyRepository);
+
+        assertThat(board.isAutomationEnabled()).isFalse();
+        assertThat(service.execute(new UpdateBoardSettingsCommand(ownerId, workspace.getId(), null, true, null)).isAutomationEnabled()).isTrue();
+        assertThat(service.execute(new UpdateBoardSettingsCommand(ownerId, workspace.getId(), null, null, true)).isAutomationEnabled()).isTrue();
+        assertThat(service.execute(new UpdateBoardSettingsCommand(ownerId, workspace.getId(), null, false, null)).isAutomationEnabled()).isFalse();
+    }
+
+    @Test
     void plainMembersCannotChangeTheBoardStructure() {
         assertThatThrownBy(() -> new CreateColumnService(access, provisioner, boardRepository)
                 .execute(new CreateColumnCommand(memberId, workspace.getId(), "QA")))

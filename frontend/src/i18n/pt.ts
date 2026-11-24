@@ -361,7 +361,7 @@ export const pt: Messages = {
     keyPrefix: "Prefixo das chaves",
     keyPrefixHint: "As histórias ficam como PRU-12. Não pode mudar depois da primeira história.",
     automation: "Mover histórias com pull requests",
-    automationHint: "Um pull request aberto move a subtarefa para Em revisão (ou a história, quando cita só a história). Um mergeado move para Concluído.",
+    automationHint: "Um pull request aberto move a subtarefa para Em revisão (ou a história, quando cita só a história). Um mergeado move para Concluído. Um fechado sem merge devolve para Em andamento. Vem desligado e vale só para este workspace.",
     consolidate: "Concluir histórias quando todas as subtarefas terminarem",
     consolidateHint: "Quando a última subtarefa termina, a história vai para Done. Mover a história manualmente sempre prevalece.",
     save: "Salvar configurações do quadro",
