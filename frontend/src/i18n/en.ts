@@ -354,6 +354,11 @@ export const en = {
     syncFailed: "Last sync failed: {reason}",
     loadFailed: "Could not list your repositories",
   },
+  origin: {
+    statusByGithub: "Updated automatically by GitHub",
+    columnByGithub: "Moved automatically by GitHub",
+    viaGithub: "via GitHub",
+  },
   boardSettings: {
     title: "Board",
     keyPrefix: "Story key prefix",

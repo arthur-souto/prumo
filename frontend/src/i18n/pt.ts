@@ -356,6 +356,11 @@ export const pt: Messages = {
     syncFailed: "A última sincronização falhou: {reason}",
     loadFailed: "Não foi possível listar seus repositórios",
   },
+  origin: {
+    statusByGithub: "Atualizado automaticamente pelo GitHub",
+    columnByGithub: "Movida automaticamente pelo GitHub",
+    viaGithub: "via GitHub",
+  },
   boardSettings: {
     title: "Quadro",
     keyPrefix: "Prefixo das chaves",
