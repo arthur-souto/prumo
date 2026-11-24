@@ -130,6 +130,17 @@ import io.github.arthursouto.prumo.application.port.in.ListActivityUseCase;
 import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.usecase.ActivityLog;
 import io.github.arthursouto.prumo.application.usecase.ListActivityService;
+import io.github.arthursouto.prumo.application.port.in.AddCommentUseCase;
+import io.github.arthursouto.prumo.application.port.in.DeleteCommentUseCase;
+import io.github.arthursouto.prumo.application.port.in.EditCommentUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListCommentsUseCase;
+import io.github.arthursouto.prumo.application.port.out.CommentRepositoryPort;
+import io.github.arthursouto.prumo.application.usecase.AddCommentService;
+import io.github.arthursouto.prumo.application.usecase.CommentAccess;
+import io.github.arthursouto.prumo.application.usecase.CommentAuthors;
+import io.github.arthursouto.prumo.application.usecase.DeleteCommentService;
+import io.github.arthursouto.prumo.application.usecase.EditCommentService;
+import io.github.arthursouto.prumo.application.usecase.ListCommentsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -620,5 +631,35 @@ public class UseCaseConfig {
             GithubPort github
     ) {
         return new CreateSubtaskBranchService(lookup, subtaskRepository, repositoryPort, tokens, github);
+    }
+
+    @Bean
+    CommentAuthors commentAuthors(UserRepositoryPort userRepository) {
+        return new CommentAuthors(userRepository);
+    }
+
+    @Bean
+    CommentAccess commentAccess(WorkspaceAccess access, CommentRepositoryPort commentRepository) {
+        return new CommentAccess(access, commentRepository);
+    }
+
+    @Bean
+    ListCommentsUseCase listCommentsUseCase(StoryLookup stories, SubtaskLookup subtasks, CommentRepositoryPort commentRepository, CommentAuthors authors) {
+        return new ListCommentsService(stories, subtasks, commentRepository, authors);
+    }
+
+    @Bean
+    AddCommentUseCase addCommentUseCase(StoryLookup stories, SubtaskLookup subtasks, CommentRepositoryPort commentRepository, CommentAuthors authors) {
+        return new AddCommentService(stories, subtasks, commentRepository, authors);
+    }
+
+    @Bean
+    EditCommentUseCase editCommentUseCase(CommentAccess comments, CommentRepositoryPort commentRepository, CommentAuthors authors) {
+        return new EditCommentService(comments, commentRepository, authors);
+    }
+
+    @Bean
+    DeleteCommentUseCase deleteCommentUseCase(CommentAccess comments, CommentRepositoryPort commentRepository) {
+        return new DeleteCommentService(comments, commentRepository);
     }
 }
