@@ -41,6 +41,8 @@ app:
       interval: ${GITHUB_POLLING_INTERVAL:60s}
 
 server:
+  # Local only by default. The front end reaches the backend from the same machine; use 0.0.0.0 only if something else must.
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
 
 management:
