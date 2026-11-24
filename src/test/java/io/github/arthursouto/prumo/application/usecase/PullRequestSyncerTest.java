@@ -209,6 +209,50 @@ class PullRequestSyncerTest {
     }
 
     @Test
+    void aClosedWithoutMergePullRequestSendsAStoryInReviewBackToInProgress() {
+        board.setAutomationEnabled(true);
+        story.moveTo(BoardFixtures.column(board, ColumnKind.IN_REVIEW).getId(), "m");
+        page(remote(7, "x", PullRequestState.CLOSED, "PRU-12"));
+        when(storyRepository.savePullRequest(any())).thenAnswer(call -> call.getArgument(0));
+
+        syncer.sync(repository);
+
+        assertThat(story.getColumnId()).isEqualTo(BoardFixtures.column(board, ColumnKind.IN_PROGRESS).getId());
+        verify(storyRepository).save(story);
+    }
+
+    @Test
+    void aClosedPullRequestKeepsTheStoryInReviewWhileAnotherPullRequestOfItIsStillOpen() {
+        board.setAutomationEnabled(true);
+        UUID inReview = BoardFixtures.column(board, ColumnKind.IN_REVIEW).getId();
+        story.moveTo(inReview, "m");
+        PullRequest stillOpen = PullRequest.track(
+                story.getId(), repository.getId(), 8, "y", PullRequestState.OPEN, "https://x/8", "PRU-12-again", now
+        );
+        when(storyRepository.findPullRequestsOfStoryWithoutSubtask(story.getId())).thenReturn(List.of(stillOpen));
+        page(remote(7, "x", PullRequestState.CLOSED, "PRU-12"));
+        when(storyRepository.savePullRequest(any())).thenAnswer(call -> call.getArgument(0));
+
+        syncer.sync(repository);
+
+        assertThat(story.getColumnId()).isEqualTo(inReview);
+        verify(storyRepository, never()).save(any());
+    }
+
+    @Test
+    void withAutomationOffAClosedPullRequestLeavesAStoryInReview() {
+        UUID inReview = BoardFixtures.column(board, ColumnKind.IN_REVIEW).getId();
+        story.moveTo(inReview, "m");
+        page(remote(7, "x", PullRequestState.CLOSED, "PRU-12"));
+        when(storyRepository.savePullRequest(any())).thenAnswer(call -> call.getArgument(0));
+
+        syncer.sync(repository);
+
+        assertThat(story.getColumnId()).isEqualTo(inReview);
+        verify(storyRepository, never()).save(any());
+    }
+
+    @Test
     void anUnchangedPullRequestDoesNotFightTheUserWhoMovedTheCardBack() {
         board.setAutomationEnabled(true);
         PullRequest known = PullRequest.track(

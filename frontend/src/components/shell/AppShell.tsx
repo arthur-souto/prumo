@@ -22,7 +22,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const { workspace, active, crumbs, fill } = useMemo(() => {
+  const { workspace, active, crumbs, scroll } = useMemo(() => {
     const match = WORKSPACE_PATH.exec(pathname);
 
     if (!match) {
@@ -32,7 +32,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
         workspace: null,
         active: (settings ? "settings" : "home") as NavKey,
         crumbs: [{ label: settings ? t("settings.title") : t("nav.workspaces") }] as Crumb[],
-        fill: false,
+        scroll: true,
       };
     }
 
@@ -49,7 +49,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
         ...(found ? [{ label: found.name, href: `/workspaces/${found.id}/board` }] : []),
         { label: title },
       ] as Crumb[],
-      fill: key === "board",
+      scroll: key !== "board",
     };
   }, [pathname, workspaces, t]);
 
@@ -88,7 +88,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
   }
 
   return (
-    <div className={`${styles.app} ${collapsed ? styles.collapsed : ""} ${menuOpen ? styles.menuOpen : ""} ${fill ? styles.appFill : ""}`}>
+    <div className={`${styles.app} ${collapsed ? styles.collapsed : ""} ${menuOpen ? styles.menuOpen : ""} ${styles.appFill}`}>
       <Topbar user={user} workspaceId={workspace?.id} crumbs={crumbs} onOpenMenu={() => setMenuOpen(true)} />
       <div className={styles.body}>
         <Sidebar
@@ -100,7 +100,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
           onNavigate={() => setMenuOpen(false)}
         />
         <button type="button" className={styles.scrim} tabIndex={-1} aria-hidden="true" onClick={() => setMenuOpen(false)} />
-        <main className={`${styles.main} ${fill ? styles.mainFill : ""}`}>{children}</main>
+        <main className={`${styles.main} ${styles.mainFill} ${scroll ? styles.mainScroll : ""}`}>{children}</main>
       </div>
     </div>
   );

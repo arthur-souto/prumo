@@ -15,6 +15,9 @@ spring:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope: read:user,user:email
+            # Where GitHub sends the browser back. The default follows the host the backend was reached on;
+            # set OAUTH_REDIRECT_URI to the front end address when logging in from another machine (docs/rede-local.md).
+            redirect-uri: ${OAUTH_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}
   jpa:
     open-in-view: false
     hibernate:
@@ -41,6 +44,8 @@ app:
       interval: ${GITHUB_POLLING_INTERVAL:60s}
 
 server:
+  # Local only by default. The front end reaches the backend from the same machine; use 0.0.0.0 only if something else must.
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
 
 management:

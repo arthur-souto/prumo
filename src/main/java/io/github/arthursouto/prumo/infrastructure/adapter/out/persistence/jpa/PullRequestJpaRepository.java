@@ -13,4 +13,8 @@ public interface PullRequestJpaRepository extends JpaRepository<PullRequestEntit
     List<PullRequestEntity> findByStoryIdIn(Collection<UUID> storyIds);
 
     Optional<PullRequestEntity> findByStoryIdAndRepositoryIdAndNumber(UUID storyId, UUID repositoryId, int number);
+
+    List<PullRequestEntity> findBySubtaskId(UUID subtaskId);
+
+    List<PullRequestEntity> findByStoryIdAndSubtaskIdIsNull(UUID storyId);
 }

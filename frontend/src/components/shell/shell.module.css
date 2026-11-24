@@ -187,6 +187,16 @@
 .mainFill {
   min-height: 0;
   overflow: hidden;
+  /* Containing block for absolutely positioned descendants (the visually hidden labels in the cards). Without it they
+     escape the clipping above and make the whole shell scrollable. */
+  position: relative;
+}
+
+/* Pages longer than the screen scroll here, so the shell never grows past the visible area. */
+.mainScroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .scrim {
@@ -375,27 +385,30 @@
     display: none;
   }
 
-  .mainFill {
-    height: auto;
-    overflow: visible;
-  }
 }
 
 
-/* Pages that fill the window (the board): the shell is exactly one screen tall and the grid hands the rest to <main>,
-   so no height depends on a vh calculation and the document itself never scrolls. */
+/* Every page, on every screen size: the shell is pinned to the four edges of the screen and
+   the grid hands the rest to <main>. Pinning (instead of 100vh/100dvh) works on any browser, including older tablets
+   without dvh, and follows the visible area when the browser toolbars show and hide. The board's cards scroll inside
+   their columns and the columns sideways; the other pages scroll inside <main> (.mainScroll). */
+.appFill {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.appFill .body {
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* From the tablet breakpoint down the sidebar is a fixed drawer and takes no space in the grid. */
 @media (min-width: 52.0625rem) {
-  .appFill {
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  .appFill .body {
-    min-height: 0;
-    grid-template-rows: minmax(0, 1fr);
-  }
-
   .appFill .sidebar {
     position: static;
     align-self: stretch;

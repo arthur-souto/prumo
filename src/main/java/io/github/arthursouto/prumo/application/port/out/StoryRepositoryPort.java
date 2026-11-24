@@ -30,4 +30,10 @@ public interface StoryRepositoryPort {
     Optional<PullRequest> findPullRequest(UUID storyId, UUID repositoryId, int number);
 
     PullRequest savePullRequest(PullRequest pullRequest);
+
+    /** The pull requests tracked on a subtask, in any state. */
+    List<PullRequest> findPullRequestsBySubtaskId(UUID subtaskId);
+
+    /** The pull requests tracked on the story itself, the ones that do not belong to a subtask. */
+    List<PullRequest> findPullRequestsOfStoryWithoutSubtask(UUID storyId);
 }

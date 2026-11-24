@@ -22,6 +22,8 @@ import io.github.arthursouto.prumo.domain.model.workspace.Workspace;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -227,10 +229,64 @@ class SubtaskPullRequestSyncTest {
     }
 
     @Test
-    void aClosedPullRequestLeavesTheSubtaskAlone() {
+    void aClosedWithoutMergePullRequestSendsAnInReviewSubtaskBackToInProgress() {
         board.setAutomationEnabled(true);
         subtask.changeStatus(SubtaskStatus.IN_REVIEW);
         page(PullRequestState.CLOSED, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_PROGRESS);
+        verify(subtaskRepository).save(subtask);
+        assertThat(story.getColumnId()).isEqualTo(board.first().getId());
+    }
+
+    @Test
+    void aClosedPullRequestKeepsTheSubtaskInReviewWhileAnotherPullRequestOfItIsStillOpen() {
+        board.setAutomationEnabled(true);
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW);
+        PullRequest stillOpen = PullRequest.track(story.getId(), repository.getId(), 8, "Second attempt", PullRequestState.OPEN,
+                "https://github.com/arthur/prumo/pull/8", "feature/PRU-13-again", now).forSubtask(subtask.getId());
+        when(storyRepository.findPullRequestsBySubtaskId(subtask.getId())).thenReturn(List.of(stillOpen));
+        page(PullRequestState.CLOSED, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
+        verify(subtaskRepository, never()).save(any(Subtask.class));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SubtaskStatus.class, names = {"TO_DO", "IN_PROGRESS", "DONE"})
+    void aClosedPullRequestLeavesASubtaskThatIsNotInReviewAlone(SubtaskStatus status) {
+        board.setAutomationEnabled(true);
+        subtask.changeStatus(status);
+        page(PullRequestState.CLOSED, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(status);
+    }
+
+    @Test
+    void withAutomationOffAClosedPullRequestChangesNothing() {
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW);
+        page(PullRequestState.CLOSED, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
+        verify(subtaskRepository, never()).save(any(Subtask.class));
+    }
+
+    @Test
+    void aReopenedPullRequestPutsTheSubtaskBackInReview() {
+        board.setAutomationEnabled(true);
+        subtask.changeStatus(SubtaskStatus.IN_PROGRESS);
+        PullRequest closed = PullRequest.track(story.getId(), repository.getId(), 7, "Add endpoint", PullRequestState.CLOSED,
+                "https://github.com/arthur/prumo/pull/7", "feature/PRU-13-endpoint", now).forSubtask(subtask.getId());
+        when(storyRepository.findPullRequest(story.getId(), repository.getId(), 7)).thenReturn(Optional.of(closed));
+        page(PullRequestState.OPEN, "feature/PRU-13-endpoint", "Add endpoint");
 
         syncer.sync(repository);
 

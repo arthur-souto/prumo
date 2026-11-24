@@ -175,4 +175,32 @@ class SubtaskPersistenceIT {
         assertThat(stories.findByWorkspaceIdAndKey(workspaceId, story.getKey()).orElseThrow().getPullRequests())
                 .extracting(PullRequest::subtaskId).containsExactly(open.getId());
     }
+
+    @Test
+    void findsThePullRequestsOfASubtaskAndOfAStoryThatHasNoSubtaskApart() {
+        givenAStory("PRQ");
+        Subtask reviewed = subtasks.save(newSubtask("PRQ", "Reviewed", 0));
+        Subtask abandoned = subtasks.save(newSubtask("PRQ", "Abandoned", 1));
+
+        UUID repositoryId = UUID.randomUUID();
+        UUID connector = UUID.randomUUID();
+        jdbc.update("INSERT INTO users (id, name, email, role, enabled, created_at, updated_at) VALUES (?, 'U', ?, 'USER', true, now(), now())",
+                connector, connector + "@test.dev");
+        jdbc.update("INSERT INTO connected_repositories (id, workspace_id, owner, name, default_branch, html_url, connected_by, created_at) VALUES (?, ?, 'o', 'r', 'main', 'https://github.com/o/r', ?, now())",
+                repositoryId, workspaceId, connector);
+        stories.savePullRequest(PullRequest.track(story.getId(), repositoryId, 3, "A", PullRequestState.OPEN,
+                "https://github.com/o/r/pull/3", "feature/a", Instant.now()).forSubtask(reviewed.getId()));
+        stories.savePullRequest(PullRequest.track(story.getId(), repositoryId, 4, "B", PullRequestState.CLOSED,
+                "https://github.com/o/r/pull/4", "feature/b", Instant.now()).forSubtask(abandoned.getId()));
+        stories.savePullRequest(PullRequest.track(story.getId(), repositoryId, 5, "C", PullRequestState.OPEN,
+                "https://github.com/o/r/pull/5", "feature/c", Instant.now()));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(stories.findPullRequestsBySubtaskId(reviewed.getId())).extracting(PullRequest::number).containsExactly(3);
+        assertThat(stories.findPullRequestsBySubtaskId(abandoned.getId()))
+                .extracting(PullRequest::number, PullRequest::state).containsExactly(org.assertj.core.groups.Tuple.tuple(4, PullRequestState.CLOSED));
+        assertThat(stories.findPullRequestsOfStoryWithoutSubtask(story.getId())).extracting(PullRequest::number).containsExactly(5);
+        assertThat(stories.findPullRequestsBySubtaskId(UUID.randomUUID())).isEmpty();
+    }
 }

@@ -152,7 +152,7 @@ Sem ela a API responde `503 NOT_CONFIGURED` nas rotas do GitHub; o resto do sist
 - `POST /workspaces/{id}/repositories` (`OWNER`/`ADMIN`): conecta um repositório ao workspace; `GET` lista e `DELETE /{repoId}` desconecta; `POST /repositories/sync` força a sincronização.
 - Na história: `PUT /stories/{key}/repository` (vincula o repositório, que é onde as branches das subtarefas são criadas) e `POST /stories/{key}/new-repository`. A criação de branch fica nas subtarefas (veja acima).
 
-Como o `localhost` não recebe webhooks, os PRs são detectados por **polling** (ETag, então respostas 304 não gastam limite): um PR é associado pela chave que aparece no nome da branch ou no título. Se a chave é de uma **subtarefa**, o PR fica nela e também aparece na história; se cita só a chave da história, fica só na história. A automação é opcional e vem desligada: PR aberto leva a subtarefa para `IN_REVIEW` e PR mergeado para `DONE` (PRs que citam só a história movem a história entre *In Review* e *Done*, como antes). Só vale na mudança de estado, então algo movido à mão não é puxado de volta. Com a **consolidação** ligada (`consolidateStories`, desligada por padrão), o evento que deixa todas as subtarefas em `DONE` move a história para *Done*; mover a história manualmente sempre prevalece. Erros do GitHub voltam com `code` estável (`MISSING_TOKEN`, `INVALID_TOKEN`, `RATE_LIMITED`, `NOT_FOUND`, `BRANCH_EXISTS`, `UNAVAILABLE`...) e não quebram o quadro.
+Como o `localhost` não recebe webhooks, os PRs são detectados por **polling** (ETag, então respostas 304 não gastam limite): um PR é associado pela chave que aparece no nome da branch ou no título. Se a chave é de uma **subtarefa**, o PR fica nela e também aparece na história; se cita só a chave da história, fica só na história. A automação é opcional e vem desligada: PR aberto leva a subtarefa para `IN_REVIEW` e PR mergeado para `DONE`. PR fechado sem merge devolve a subtarefa para `IN_PROGRESS`, mas só se ela estiver em `IN_REVIEW` e nenhum outro PR dela ainda estiver aberto (uma subtarefa já concluída ou sem PR em revisão não é mexida). PRs que citam só a história seguem a mesma regra entre as colunas *In Review*, *In Progress* e *Done*. Só vale na mudança de estado, então algo movido à mão não é puxado de volta. Com a **consolidação** ligada (`consolidateStories`, desligada por padrão), o evento que deixa todas as subtarefas em `DONE` move a história para *Done*; mover a história manualmente sempre prevalece. Erros do GitHub voltam com `code` estável (`MISSING_TOKEN`, `INVALID_TOKEN`, `RATE_LIMITED`, `NOT_FOUND`, `BRANCH_EXISTS`, `UNAVAILABLE`...) e não quebram o quadro.
 
 | Variável | Padrão | Uso |
 |---|---|---|
@@ -183,7 +183,11 @@ npm install
 npm run dev
 ```
 
-Telas: `/login`, `/register`, `/` (workspaces), `/settings` (token do GitHub), `/workspaces/{id}` (configurações), `/board`, `/backlog`, `/repositories` e `/subtasks/{key}`. O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend.
+Telas: `/login`, `/register`, `/` (workspaces), `/settings` (token do GitHub), `/workspaces/{id}` (configurações), `/board`, `/backlog`, `/repositories` e `/subtasks/{key}`. O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend (para outro endereço, veja [docs/rede-local.md](docs/rede-local.md)). O front encaminha `/oauth2/*` e `/login/oauth2/*` ao backend, por isso o login com GitHub começa e termina na origem do front.
+
+#### Acesso pela rede local (opcional)
+
+Por padrão tudo responde só em `localhost`: o front (`npm run dev`), o backend (`SERVER_ADDRESS=127.0.0.1`) e o banco (`POSTGRES_BIND=127.0.0.1`). Para outros computadores da rede usarem o app, rode `npm run dev:lan` e abra o endereço `Network: http://<ip>:3000` que o Next mostra. O login com GitHub a partir de outro computador precisa de configuração extra. Para desfazer, volte a usar `npm run dev`. Para alternar rápido entre o modo local e o de rede (credenciais OAuth e URLs incluídas) use `scripts/mode.sh local|lan|status`. O passo a passo, todas as variáveis e a solução de problemas estão em [docs/rede-local.md](docs/rede-local.md).
 
 ### Idiomas
 

@@ -46,3 +46,7 @@ build/
 .envrc
 keys/
 *.pem
+
+# Perfis de ambiente (scripts/mode.sh) e cópias de segurança: têm secrets
+.env.mode.*
+.env*.bak
