@@ -124,6 +124,18 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
         return StoryMapper.toDomain(pullRequestRepository.save(StoryMapper.toEntity(pullRequest)));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PullRequest> findPullRequestsBySubtaskId(UUID subtaskId) {
+        return pullRequestRepository.findBySubtaskId(subtaskId).stream().map(StoryMapper::toDomain).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PullRequest> findPullRequestsOfStoryWithoutSubtask(UUID storyId) {
+        return pullRequestRepository.findByStoryIdAndSubtaskIdIsNull(storyId).stream().map(StoryMapper::toDomain).toList();
+    }
+
     private List<UserStory> hydrate(List<UserStoryEntity> entities) {
         if (entities.isEmpty()) {
             return List.of();

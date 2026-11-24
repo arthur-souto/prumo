@@ -164,24 +164,42 @@ public class PullRequestSyncer {
         }
     }
 
+    /**
+     * Open puts the subtask in review and merged finishes it. A pull request closed without merging sends it back to
+     * in progress, but only when it is in review and no other pull request of the subtask is still open: a closed
+     * attempt must not undo a subtask that is finished, nor one whose other pull request is still being reviewed.
+     */
     private void automate(Board board, Subtask subtask, PullRequestState state) {
         switch (state) {
             case OPEN -> workflow.changeStatus(board, subtask, SubtaskStatus.IN_REVIEW);
             case MERGED -> workflow.changeStatus(board, subtask, SubtaskStatus.DONE);
             case CLOSED -> {
+                if (subtask.getStatus() == SubtaskStatus.IN_REVIEW
+                        && !anyOpen(storyRepository.findPullRequestsBySubtaskId(subtask.getId()))) {
+                    workflow.changeStatus(board, subtask, SubtaskStatus.IN_PROGRESS);
+                }
             }
         }
     }
 
+    /** The same rule for a story that no subtask took part in: the card moves between the review and progress columns. */
     private void automate(Board board, UserStory story, PullRequestState state) {
-        ColumnKind target = switch (state) {
-            case OPEN -> ColumnKind.IN_REVIEW;
-            case MERGED -> ColumnKind.DONE;
-            case CLOSED -> null;
-        };
+        switch (state) {
+            case OPEN -> workflow.moveStory(board, story, ColumnKind.IN_REVIEW);
+            case MERGED -> workflow.moveStory(board, story, ColumnKind.DONE);
+            case CLOSED -> {
+                boolean inReview = board.ofKind(ColumnKind.IN_REVIEW)
+                        .map(column -> column.getId().equals(story.getColumnId()))
+                        .orElse(false);
 
-        if (target != null) {
-            workflow.moveStory(board, story, target);
+                if (inReview && !anyOpen(storyRepository.findPullRequestsOfStoryWithoutSubtask(story.getId()))) {
+                    workflow.moveStory(board, story, ColumnKind.IN_PROGRESS);
+                }
+            }
         }
+    }
+
+    private static boolean anyOpen(List<PullRequest> pullRequests) {
+        return pullRequests.stream().anyMatch(pullRequest -> pullRequest.state() == PullRequestState.OPEN);
     }
 }
