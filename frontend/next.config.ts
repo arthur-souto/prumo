@@ -16,6 +16,19 @@ const extraOrigins = (process.env.DEV_ALLOWED_ORIGINS ?? "")
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  // The GitHub login runs through this server so it keeps working from other machines while the backend stays local.
+  async rewrites() {
+    const backend = process.env.BACKEND_URL ?? "http://localhost:8080";
+
+    return {
+      beforeFiles: [
+        { source: "/oauth2/:path*", destination: `${backend}/oauth2/:path*` },
+        { source: "/login/oauth2/:path*", destination: `${backend}/login/oauth2/:path*` },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   allowedDevOrigins: [...(lanAccess ? PRIVATE_NETWORKS : []), ...extraOrigins],
 };
 

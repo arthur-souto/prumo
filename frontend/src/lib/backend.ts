@@ -4,8 +4,6 @@ import { internalBackendUrl } from "./backend-url";
 
 const internalUrl = internalBackendUrl;
 
-export const publicBackendUrl = process.env.BACKEND_PUBLIC_URL ?? internalUrl;
-
 export async function backendFetch(path: string, init: RequestInit = {}) {
   const locale = await getLocale();
   const headers = new Headers(init.headers);

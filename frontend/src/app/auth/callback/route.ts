@@ -1,11 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { backendFetch, jsonRequest, type TokenPayload } from "@/lib/backend";
 import { writeSession } from "@/lib/cookies";
+import { redirectTo } from "@/lib/redirect";
 
-function failure(request: NextRequest, reason: string) {
-  const url = new URL("/login", request.url);
-  url.searchParams.set("error", reason);
-  return NextResponse.redirect(url);
+function failure(reason: string) {
+  return redirectTo(`/login?error=${encodeURIComponent(reason)}`);
 }
 
 export async function GET(request: NextRequest) {
@@ -15,22 +14,22 @@ export async function GET(request: NextRequest) {
   const linked = params.get("linked");
 
   if (error) {
-    return failure(request, error);
+    return failure(error);
   }
 
   if (linked) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return redirectTo("/");
   }
 
   if (!code) {
-    return failure(request, "oauth_failed");
+    return failure("oauth_failed");
   }
 
   const response = await backendFetch("/api/v1/auth/oauth/exchange", jsonRequest({ code })).catch(() => null);
 
   if (!response?.ok) {
-    return failure(request, "oauth_failed");
+    return failure("oauth_failed");
   }
 
-  return writeSession(NextResponse.redirect(new URL("/", request.url)), (await response.json()) as TokenPayload);
+  return writeSession(redirectTo("/"), (await response.json()) as TokenPayload);
 }
