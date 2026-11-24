@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Bookmark, GitBranch, GitMerge, GitPullRequest, ListChecks } from "lucide-react";
+import { Bookmark, GitBranch, GitMerge, GitPullRequest, ListChecks, User } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Member, Story } from "@/lib/board-types";
@@ -51,6 +51,18 @@ function pullRequestIcon(story: Story) {
   return { Icon: GitPullRequest, className: "" };
 }
 
+/** The description as plain text for the card: markdown marks dropped, whitespace collapsed. */
+function excerpt(markdown: string | null) {
+  if (!markdown) return "";
+
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#>*_`~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Stable colour per label, so the same label always looks the same. */
 function labelTone(label: string) {
   let hash = 0;
@@ -72,12 +84,15 @@ export function CardContent({
   t: ReturnType<typeof useT>;
 }) {
   const pullRequest = story.pullRequests.length > 0 ? pullRequestIcon(story) : null;
+  const description = excerpt(story.description);
 
   return (
     <>
       <button type="button" className={styles.cardTitle} onClick={() => onOpen?.(story)}>
         {story.title}
       </button>
+
+      {description ? <p className={styles.description}>{description}</p> : null}
 
       {story.labels.length > 0 ? (
         <ul className={styles.labels}>
@@ -131,7 +146,11 @@ export function CardContent({
           <span className={styles.assignee} title={assignee.name}>
             <Avatar name={assignee.name} seed={assignee.id} src={assignee.avatarUrl} size="sm" />
           </span>
-        ) : null}
+        ) : (
+          <span className={`${styles.assignee} ${styles.unassigned}`} title={t("story.unassigned")} role="img" aria-label={t("story.unassigned")}>
+            <User size={14} aria-hidden="true" />
+          </span>
+        )}
       </div>
     </>
   );

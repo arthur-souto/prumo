@@ -369,3 +369,24 @@
 .subtasksDone {
   color: var(--success-text, var(--text-default));
 }
+
+.description {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-subtle);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.unassigned {
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-full);
+  color: var(--text-subtle);
+}

@@ -13,7 +13,7 @@ import styles from "./shell.module.css";
 export type Crumb = { label: string; href?: string };
 
 type TopbarProps = {
-  user: { name: string; email: string };
+  user: { name: string; email: string; avatarUrl?: string | null };
   workspaceId?: string;
   crumbs: Crumb[];
   onOpenMenu: () => void;
@@ -102,7 +102,7 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
         <Button appearance="primary" size="sm" icon={<Plus size={16} aria-hidden="true" />} onClick={create}>
           {t("topbar.create")}
         </Button>
-        <UserMenu name={user.name} email={user.email} />
+        <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
       </div>
     </header>
   );

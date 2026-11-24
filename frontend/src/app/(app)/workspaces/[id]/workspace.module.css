@@ -21,6 +21,7 @@
 }
 
 .title {
+  margin-bottom: var(--space-5);
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
@@ -274,4 +275,9 @@
   .contentFill {
     height: auto;
   }
+}
+
+/* Hint that belongs to the field above it but sits outside the row, so the button lines up with the input. */
+.afterField {
+  margin-top: calc(var(--space-4) * -1);
 }

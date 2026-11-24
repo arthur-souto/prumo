@@ -64,7 +64,6 @@ export function GithubTokenSettings({ connection }: { connection: GithubConnecti
             type="password"
             autoComplete="off"
             value={token}
-            hint={t("githubSettings.tokenHint")}
             maxLength={255}
             onChange={(event) => setToken(event.target.value)}
             required
@@ -73,6 +72,7 @@ export function GithubTokenSettings({ connection }: { connection: GithubConnecti
             {t("githubSettings.save")}
           </Button>
         </form>
+        <p className={`${styles.hint} ${styles.afterField}`}>{t("githubSettings.tokenHint")}</p>
       </div>
     </section>
   );

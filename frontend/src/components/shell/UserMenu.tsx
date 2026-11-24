@@ -24,7 +24,7 @@ const THEMES = [
   { value: "system", icon: Monitor },
 ] as const satisfies readonly { value: ThemeChoice; icon: unknown }[];
 
-export function UserMenu({ name, email }: { name: string; email: string }) {
+export function UserMenu({ name, email, avatarUrl }: { name: string; email: string; avatarUrl?: string | null }) {
   const router = useRouter();
   const { t, locale } = useI18n();
   const { choice, select } = useTheme();
@@ -41,7 +41,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
     <DropdownMenu>
       <DropdownTrigger>
         <button type="button" className={styles.avatarButton} aria-label={t("topbar.userMenu")} disabled={leaving}>
-          <Avatar name={name} seed={email} size="sm" />
+          <Avatar name={name} seed={email} src={avatarUrl} size="sm" />
         </button>
       </DropdownTrigger>
       <DropdownContent>

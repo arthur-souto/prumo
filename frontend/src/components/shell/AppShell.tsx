@@ -11,7 +11,7 @@ const COLLAPSE_KEY = "prumo_sidebar_collapsed";
 const WORKSPACE_PATH = /^\/workspaces\/([^/]+)(?:\/([^/]+))?/;
 
 type AppShellProps = {
-  user: { name: string; email: string };
+  user: { name: string; email: string; avatarUrl?: string | null };
   workspaces: WorkspaceRef[];
   children: ReactNode;
 };
