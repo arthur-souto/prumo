@@ -45,7 +45,17 @@ public class UpdateStoryService implements UpdateStoryUseCase {
                     null, String.join(",", changed));
         }
 
+        if (!Objects.equals(before.points(), saved.getStoryPoints())) {
+            activity.record(saved.getWorkspaceId(), saved.getId(), Actor.user(command.userId()), ActivityType.STORY_POINTS_CHANGED,
+                    pointsText(before.points()), pointsText(saved.getStoryPoints()));
+        }
+
         return saved;
+    }
+
+    /** The points as shown in the history; null means the story has no estimate. */
+    private static String pointsText(Integer points) {
+        return points == null ? null : String.valueOf(points);
     }
 
     /** The editable fields before the update, to tell which ones it changed. */
@@ -62,7 +72,6 @@ public class UpdateStoryService implements UpdateStoryUseCase {
             if (!Objects.equals(title, after.getTitle())) changed.add("title");
             if (!Objects.equals(description, after.getDescription())) changed.add("description");
             if (!Objects.equals(priority, after.getPriority())) changed.add("priority");
-            if (!Objects.equals(points, after.getStoryPoints())) changed.add("points");
             if (!Objects.equals(labels, after.getLabels())) changed.add("labels");
             if (!Objects.equals(criteria, after.getAcceptanceCriteria())) changed.add("criteria");
 
