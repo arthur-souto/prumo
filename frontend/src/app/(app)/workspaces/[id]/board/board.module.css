@@ -241,6 +241,8 @@
 }
 
 .priority {
+  /* Containing block for the visually hidden label, so it stays inside the badge instead of the page. */
+  position: relative;
   display: inline-flex;
   align-items: center;
 }
@@ -289,8 +291,6 @@
 @media (max-width: 40rem) {
   .columns {
     grid-auto-columns: 85vw;
-    grid-template-rows: auto;
-    overflow-y: visible;
   }
 
   .search {
