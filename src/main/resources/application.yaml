@@ -33,6 +33,13 @@ app:
     code-ttl: ${OAUTH_CODE_TTL:60s}
     github-api-url: ${GITHUB_API_URL:https://api.github.com}
 
+  github:
+    api-url: ${GITHUB_API_URL:https://api.github.com}
+    encryption-key: ${PRUMO_ENCRYPTION_KEY:}
+    polling:
+      enabled: ${GITHUB_POLLING_ENABLED:true}
+      interval: ${GITHUB_POLLING_INTERVAL:60s}
+
 server:
   port: ${SERVER_PORT:8080}
 

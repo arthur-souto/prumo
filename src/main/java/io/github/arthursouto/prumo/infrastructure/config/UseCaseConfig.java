@@ -43,6 +43,70 @@ import io.github.arthursouto.prumo.application.usecase.RefreshTokensService;
 import io.github.arthursouto.prumo.application.usecase.RegisterUserService;
 import io.github.arthursouto.prumo.application.usecase.RevokeRefreshTokenService;
 import io.github.arthursouto.prumo.application.usecase.StartOAuthLoginService;
+import io.github.arthursouto.prumo.application.port.in.ConnectRepositoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.CreateColumnUseCase;
+import io.github.arthursouto.prumo.application.port.in.CreateStoryBranchUseCase;
+import io.github.arthursouto.prumo.application.port.in.CreateStoryRepositoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.CreateStoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.DeleteColumnUseCase;
+import io.github.arthursouto.prumo.application.port.in.DeleteStoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.DisconnectRepositoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetBoardUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetGithubConnectionUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetStoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.LinkStoryRepositoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListAccessibleRepositoriesUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListConnectedRepositoriesUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListStoriesUseCase;
+import io.github.arthursouto.prumo.application.port.in.MoveStoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.RemoveGithubTokenUseCase;
+import io.github.arthursouto.prumo.application.port.in.RenameColumnUseCase;
+import io.github.arthursouto.prumo.application.port.in.ReorderColumnsUseCase;
+import io.github.arthursouto.prumo.application.port.in.SaveGithubTokenUseCase;
+import io.github.arthursouto.prumo.application.port.in.SetChecklistItemDoneUseCase;
+import io.github.arthursouto.prumo.application.port.in.SuggestBranchNameUseCase;
+import io.github.arthursouto.prumo.application.port.in.SyncAllPullRequestsUseCase;
+import io.github.arthursouto.prumo.application.port.in.SyncWorkspacePullRequestsUseCase;
+import io.github.arthursouto.prumo.application.port.in.UpdateBoardSettingsUseCase;
+import io.github.arthursouto.prumo.application.port.in.UpdateStoryUseCase;
+import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.GithubPort;
+import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.TokenCipherPort;
+import io.github.arthursouto.prumo.application.usecase.BoardProvisioner;
+import io.github.arthursouto.prumo.application.usecase.ConnectRepositoryService;
+import io.github.arthursouto.prumo.application.usecase.CreateColumnService;
+import io.github.arthursouto.prumo.application.usecase.CreateStoryBranchService;
+import io.github.arthursouto.prumo.application.usecase.CreateStoryRepositoryService;
+import io.github.arthursouto.prumo.application.usecase.CreateStoryService;
+import io.github.arthursouto.prumo.application.usecase.DeleteColumnService;
+import io.github.arthursouto.prumo.application.usecase.DeleteStoryService;
+import io.github.arthursouto.prumo.application.usecase.DisconnectRepositoryService;
+import io.github.arthursouto.prumo.application.usecase.GetBoardService;
+import io.github.arthursouto.prumo.application.usecase.GetGithubConnectionService;
+import io.github.arthursouto.prumo.application.usecase.GetStoryService;
+import io.github.arthursouto.prumo.application.usecase.GithubTokens;
+import io.github.arthursouto.prumo.application.usecase.LinkStoryRepositoryService;
+import io.github.arthursouto.prumo.application.usecase.ListAccessibleRepositoriesService;
+import io.github.arthursouto.prumo.application.usecase.ListConnectedRepositoriesService;
+import io.github.arthursouto.prumo.application.usecase.ListStoriesService;
+import io.github.arthursouto.prumo.application.usecase.MoveStoryService;
+import io.github.arthursouto.prumo.application.usecase.PullRequestSyncer;
+import io.github.arthursouto.prumo.application.usecase.RemoveGithubTokenService;
+import io.github.arthursouto.prumo.application.usecase.RenameColumnService;
+import io.github.arthursouto.prumo.application.usecase.ReorderColumnsService;
+import io.github.arthursouto.prumo.application.usecase.RepositoryConnector;
+import io.github.arthursouto.prumo.application.usecase.SaveGithubTokenService;
+import io.github.arthursouto.prumo.application.usecase.SetChecklistItemDoneService;
+import io.github.arthursouto.prumo.application.usecase.StoryLookup;
+import io.github.arthursouto.prumo.application.usecase.SuggestBranchNameService;
+import io.github.arthursouto.prumo.application.usecase.SyncAllPullRequestsService;
+import io.github.arthursouto.prumo.application.usecase.SyncWorkspacePullRequestsService;
+import io.github.arthursouto.prumo.application.usecase.UpdateBoardSettingsService;
+import io.github.arthursouto.prumo.application.usecase.UpdateStoryService;
+import io.github.arthursouto.prumo.application.usecase.WorkspaceAccess;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -182,5 +246,278 @@ public class UseCaseConfig {
     @Bean
     DeleteWorkspaceUseCase deleteWorkspaceUseCase(WorkspaceRepositoryPort workspaceRepository) {
         return new DeleteWorkspaceService(workspaceRepository);
+    }
+
+    @Bean
+    WorkspaceAccess workspaceAccess(WorkspaceRepositoryPort workspaceRepository) {
+        return new WorkspaceAccess(workspaceRepository);
+    }
+
+    @Bean
+    BoardProvisioner boardProvisioner(BoardRepositoryPort boardRepository) {
+        return new BoardProvisioner(boardRepository);
+    }
+
+    @Bean
+    StoryLookup storyLookup(WorkspaceAccess access, StoryRepositoryPort storyRepository) {
+        return new StoryLookup(access, storyRepository);
+    }
+
+    @Bean
+    GithubTokens githubTokens(
+            GithubConnectionRepositoryPort connectionRepository,
+            TokenCipherPort cipher
+    ) {
+        return new GithubTokens(connectionRepository, cipher);
+    }
+
+    @Bean
+    RepositoryConnector repositoryConnector(ConnectedRepositoryPort repositoryPort) {
+        return new RepositoryConnector(repositoryPort);
+    }
+
+    @Bean
+    PullRequestSyncer pullRequestSyncer(
+            GithubConnectionRepositoryPort connectionRepository,
+            TokenCipherPort cipher,
+            GithubPort github,
+            StoryRepositoryPort storyRepository,
+            BoardRepositoryPort boardRepository,
+            ConnectedRepositoryPort repositoryPort,
+            Clock clock
+    ) {
+        return new PullRequestSyncer(
+                connectionRepository,
+                cipher,
+                github,
+                storyRepository,
+                boardRepository,
+                repositoryPort,
+                clock
+        );
+    }
+
+    @Bean
+    GetBoardUseCase getBoardUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new GetBoardService(access, boards, storyRepository);
+    }
+
+    @Bean
+    UpdateBoardSettingsUseCase updateBoardSettingsUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new UpdateBoardSettingsService(access, boards, boardRepository, storyRepository);
+    }
+
+    @Bean
+    CreateColumnUseCase createColumnUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository
+    ) {
+        return new CreateColumnService(access, boards, boardRepository);
+    }
+
+    @Bean
+    RenameColumnUseCase renameColumnUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository
+    ) {
+        return new RenameColumnService(access, boards, boardRepository);
+    }
+
+    @Bean
+    ReorderColumnsUseCase reorderColumnsUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository
+    ) {
+        return new ReorderColumnsService(access, boards, boardRepository);
+    }
+
+    @Bean
+    DeleteColumnUseCase deleteColumnUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new DeleteColumnService(access, boards, boardRepository, storyRepository);
+    }
+
+    @Bean
+    CreateStoryUseCase createStoryUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new CreateStoryService(access, boards, boardRepository, storyRepository);
+    }
+
+    @Bean
+    ListStoriesUseCase listStoriesUseCase(
+            WorkspaceAccess access,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new ListStoriesService(access, storyRepository);
+    }
+
+    @Bean
+    GetStoryUseCase getStoryUseCase(WorkspaceAccess access, StoryRepositoryPort storyRepository) {
+        return new GetStoryService(access, storyRepository);
+    }
+
+    @Bean
+    UpdateStoryUseCase updateStoryUseCase(StoryLookup stories, StoryRepositoryPort storyRepository) {
+        return new UpdateStoryService(stories, storyRepository);
+    }
+
+    @Bean
+    DeleteStoryUseCase deleteStoryUseCase(StoryLookup stories, StoryRepositoryPort storyRepository) {
+        return new DeleteStoryService(stories, storyRepository);
+    }
+
+    @Bean
+    SetChecklistItemDoneUseCase setChecklistItemDoneUseCase(
+            StoryLookup stories,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new SetChecklistItemDoneService(stories, storyRepository);
+    }
+
+    @Bean
+    MoveStoryUseCase moveStoryUseCase(
+            WorkspaceAccess access,
+            BoardProvisioner boards,
+            StoryLookup stories,
+            StoryRepositoryPort storyRepository
+    ) {
+        return new MoveStoryService(access, boards, stories, storyRepository);
+    }
+
+    @Bean
+    SaveGithubTokenUseCase saveGithubTokenUseCase(
+            GithubPort github,
+            GithubConnectionRepositoryPort connectionRepository,
+            TokenCipherPort cipher,
+            Clock clock
+    ) {
+        return new SaveGithubTokenService(github, connectionRepository, cipher, clock);
+    }
+
+    @Bean
+    GetGithubConnectionUseCase getGithubConnectionUseCase(
+            GithubConnectionRepositoryPort connectionRepository
+    ) {
+        return new GetGithubConnectionService(connectionRepository);
+    }
+
+    @Bean
+    RemoveGithubTokenUseCase removeGithubTokenUseCase(
+            GithubConnectionRepositoryPort connectionRepository
+    ) {
+        return new RemoveGithubTokenService(connectionRepository);
+    }
+
+    @Bean
+    ListAccessibleRepositoriesUseCase listAccessibleRepositoriesUseCase(
+            GithubTokens tokens,
+            GithubPort github
+    ) {
+        return new ListAccessibleRepositoriesService(tokens, github);
+    }
+
+    @Bean
+    ConnectRepositoryUseCase connectRepositoryUseCase(
+            WorkspaceAccess access,
+            GithubTokens tokens,
+            GithubPort github,
+            RepositoryConnector connector
+    ) {
+        return new ConnectRepositoryService(access, tokens, github, connector);
+    }
+
+    @Bean
+    ListConnectedRepositoriesUseCase listConnectedRepositoriesUseCase(
+            WorkspaceAccess access,
+            ConnectedRepositoryPort repositoryPort
+    ) {
+        return new ListConnectedRepositoriesService(access, repositoryPort);
+    }
+
+    @Bean
+    DisconnectRepositoryUseCase disconnectRepositoryUseCase(
+            WorkspaceAccess access,
+            ConnectedRepositoryPort repositoryPort
+    ) {
+        return new DisconnectRepositoryService(access, repositoryPort);
+    }
+
+    @Bean
+    LinkStoryRepositoryUseCase linkStoryRepositoryUseCase(
+            StoryLookup stories,
+            StoryRepositoryPort storyRepository,
+            ConnectedRepositoryPort repositoryPort
+    ) {
+        return new LinkStoryRepositoryService(stories, storyRepository, repositoryPort);
+    }
+
+    @Bean
+    SuggestBranchNameUseCase suggestBranchNameUseCase(StoryLookup stories) {
+        return new SuggestBranchNameService(stories);
+    }
+
+    @Bean
+    CreateStoryBranchUseCase createStoryBranchUseCase(
+            StoryLookup stories,
+            StoryRepositoryPort storyRepository,
+            ConnectedRepositoryPort repositoryPort,
+            GithubTokens tokens,
+            GithubPort github
+    ) {
+        return new CreateStoryBranchService(
+                stories,
+                storyRepository,
+                repositoryPort,
+                tokens,
+                github
+        );
+    }
+
+    @Bean
+    CreateStoryRepositoryUseCase createStoryRepositoryUseCase(
+            StoryLookup stories,
+            StoryRepositoryPort storyRepository,
+            GithubTokens tokens,
+            GithubPort github,
+            RepositoryConnector connector
+    ) {
+        return new CreateStoryRepositoryService(stories, storyRepository, tokens, github, connector);
+    }
+
+    @Bean
+    SyncWorkspacePullRequestsUseCase syncWorkspacePullRequestsUseCase(
+            WorkspaceAccess access,
+            ConnectedRepositoryPort repositoryPort,
+            PullRequestSyncer syncer
+    ) {
+        return new SyncWorkspacePullRequestsService(access, repositoryPort, syncer);
+    }
+
+    @Bean
+    SyncAllPullRequestsUseCase syncAllPullRequestsUseCase(
+            ConnectedRepositoryPort repositoryPort,
+            PullRequestSyncer syncer
+    ) {
+        return new SyncAllPullRequestsService(repositoryPort, syncer);
     }
 }

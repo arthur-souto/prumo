@@ -1,5 +1,6 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web;
 
+import io.github.arthursouto.prumo.application.exceptions.GithubIntegrationException;
 import io.github.arthursouto.prumo.application.exceptions.InvalidAuthorizationCodeException;
 import io.github.arthursouto.prumo.application.exceptions.InvalidRefreshTokenException;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
@@ -48,6 +49,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(GithubIntegrationException.class)
+    public ProblemDetail handleGithub(GithubIntegrationException exception) {
+        HttpStatus status = switch (exception.getReason()) {
+            case RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
+            case NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case BRANCH_EXISTS, REPOSITORY_EXISTS -> HttpStatus.CONFLICT;
+            case UNAVAILABLE -> HttpStatus.BAD_GATEWAY;
+            case NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
+            case MISSING_TOKEN, INVALID_TOKEN, PERMISSION_DENIED -> HttpStatus.UNPROCESSABLE_ENTITY;
+        };
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, exception.getMessage());
+        problem.setProperty("code", exception.getReason().name());
+
+        return problem;
     }
 
     @ExceptionHandler(InvalidAuthorizationCodeException.class)

@@ -105,6 +105,44 @@ Papéis por workspace: `OWNER`, `ADMIN` e `MEMBER`. Quem não é membro sempre r
 
 No front, `/` lista os workspaces (com busca e o botão **Create workspace**) e `/workspaces/{id}` mostra os detalhes, as configurações e a exclusão com confirmação pelo nome.
 
+### User stories e quadro Kanban
+
+Cada workspace tem um quadro criado no primeiro acesso, com as colunas *To Do*, *In Progress*, *In Review* e *Done* e um prefixo de chave derivado do nome (ex.: `PRU`, único no sistema). As histórias ganham chaves legíveis (`PRU-12`), numeradas de forma atômica no banco.
+
+| Endpoint (base `/api/v1/workspaces/{id}`) | Descrição |
+|---|---|
+| `GET /board` | Colunas em ordem e todas as histórias |
+| `PUT /board/settings` | Prefixo da chave (travado depois da primeira história) e automação com o GitHub. `OWNER`/`ADMIN` |
+| `POST /board/columns`, `PUT /board/columns/{id}`, `PUT /board/columns/order`, `DELETE /board/columns/{id}?moveTo=` | Gerência das colunas. `OWNER`/`ADMIN` |
+| `POST /stories`, `GET /stories?label=&priority=&q=` | Cria e lista (filtros por label, prioridade e texto) |
+| `GET/PUT/DELETE /stories/{key}` | Detalhe, edição e exclusão |
+| `PATCH /stories/{key}/checklist/{itemId}` | Marca um critério de aceite ou subtarefa |
+| `PUT /stories/{key}/move` | Move para uma coluna entre dois vizinhos (`afterStoryId`/`beforeStoryId`); grava só o card movido |
+
+A ordem dos cards usa rank fracionário em base 62 (`Rank`), então mover um card não reescreve os outros; se um rank esgotar, a coluna é reequilibrada. Qualquer membro trabalha com histórias; estrutura do quadro exige `OWNER`/`ADMIN`. Quem não é membro recebe 404. No front, o quadro fica em `/workspaces/{id}/board` (arrastar e soltar, painel de detalhe, filtros e busca).
+
+### Integração com o GitHub
+
+Cada usuário salva um **personal access token** (escopo `repo`) em `PUT /api/v1/github/token`. O token é validado no GitHub, guardado cifrado (AES-GCM) e nunca volta em nenhuma resposta nem em log. Defina a chave de cifra antes de usar:
+
+```shell
+export PRUMO_ENCRYPTION_KEY=$(openssl rand -base64 32)
+```
+
+Sem ela a API responde `503 NOT_CONFIGURED` nas rotas do GitHub; o resto do sistema funciona.
+
+- `GET /api/v1/github/repositories`: repositórios acessíveis ao token.
+- `POST /workspaces/{id}/repositories` (`OWNER`/`ADMIN`): conecta um repositório ao workspace; `GET` lista e `DELETE /{repoId}` desconecta; `POST /repositories/sync` força a sincronização.
+- Na história: `PUT /stories/{key}/repository` (vincular), `GET /stories/{key}/branch-suggestion` (`feature/PRU-12-titulo`), `POST /stories/{key}/branch` e `POST /stories/{key}/new-repository`.
+
+Como o `localhost` não recebe webhooks, os PRs são detectados por **polling** (ETag, então respostas 304 não gastam limite): um PR pertence à história cuja chave aparece no nome da branch ou no título. A automação é opcional e vem desligada: PR aberto leva a história para *In Review* e PR mergeado para *Done* (só na mudança de estado, então um card movido à mão não é puxado de volta). Erros do GitHub voltam com `code` estável (`MISSING_TOKEN`, `INVALID_TOKEN`, `RATE_LIMITED`, `NOT_FOUND`, `BRANCH_EXISTS`, `UNAVAILABLE`...) e não quebram o quadro.
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `PRUMO_ENCRYPTION_KEY` | vazio | Chave AES de 32 bytes em Base64 |
+| `GITHUB_POLLING_ENABLED` | `true` | Liga o polling |
+| `GITHUB_POLLING_INTERVAL` | `60s` | Intervalo do polling |
+
 ### Front end (Next.js)
 
 O front fica em `frontend/` e funciona como BFF: os tokens ficam em cookies `httpOnly` e nunca chegam ao JavaScript do navegador. Todo o design vem de `frontend/src/styles/token.css`.
