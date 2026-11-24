@@ -2,6 +2,7 @@ package io.github.arthursouto.prumo.application.usecase;
 
 import io.github.arthursouto.prumo.application.exceptions.GithubFailure;
 import io.github.arthursouto.prumo.application.exceptions.GithubIntegrationException;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
@@ -47,6 +48,9 @@ import static org.mockito.Mockito.when;
 class PullRequestSyncerTest {
 
     @Mock
+    private ActivityRepositoryPort activityRepository;
+
+    @Mock
     private GithubConnectionRepositoryPort connectionRepository;
 
     @Mock
@@ -87,7 +91,7 @@ class PullRequestSyncerTest {
                 github,
                 storyRepository,
                 subtaskRepository,
-                new SubtaskWorkflow(subtaskRepository, storyRepository),
+                new SubtaskWorkflow(subtaskRepository, storyRepository, new ActivityLog(activityRepository)),
                 boardRepository,
                 repositoryPort,
                 Clock.fixed(now, ZoneOffset.UTC)

@@ -91,3 +91,24 @@ export type Member = {
   avatarUrl: string | null;
   role: "OWNER" | "ADMIN" | "MEMBER";
 };
+
+export type ActivityType =
+  | "STORY_CREATED"
+  | "STORY_MOVED"
+  | "STORY_UPDATED"
+  | "STORY_ASSIGNED"
+  | "SUBTASK_ADDED"
+  | "SUBTASK_STATUS_CHANGED";
+
+/** One entry of the history of a story or subtask. The actor is null when GitHub made the change. */
+export type ActivityEntry = {
+  id: string;
+  type: ActivityType;
+  source: ChangeSource;
+  actorId: string | null;
+  actorName: string | null;
+  subtaskKey: string | null;
+  from: string | null;
+  to: string | null;
+  createdAt: string;
+};

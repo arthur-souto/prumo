@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Markdown } from "@/components/ui/Markdown";
 import { Select } from "@/components/ui/Select";
+import { ActivityFeed } from "../../board/ActivityFeed";
 import { GithubOrigin } from "../../board/GithubOrigin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { TextArea } from "@/components/ui/TextArea";
@@ -161,6 +162,7 @@ export function SubtaskView({ workspaceId, initial, storyTitle, repository, canB
             )}
           </section>
 
+          <ActivityFeed workspaceId={workspaceId} scope={`subtasks/${subtask.key}`} version={`${subtask.updatedAt}|${subtask.status}`} />
 
           <div className={styles.actions}>
             <Button type="submit" appearance="primary" loading={saving} disabled={!dirty}>

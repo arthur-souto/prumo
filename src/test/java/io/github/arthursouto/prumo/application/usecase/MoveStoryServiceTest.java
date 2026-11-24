@@ -1,6 +1,11 @@
 package io.github.arthursouto.prumo.application.usecase;
 
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
+import io.github.arthursouto.prumo.domain.model.activity.Activity;
 import io.github.arthursouto.prumo.application.port.in.command.MoveStoryCommand;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
@@ -31,6 +36,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MoveStoryServiceTest {
+
+    @Mock
+    private ActivityRepositoryPort activityRepository;
 
     @Mock
     private WorkspaceRepositoryPort workspaceRepository;
@@ -67,7 +75,8 @@ class MoveStoryServiceTest {
                 access,
                 new BoardProvisioner(boardRepository),
                 new StoryLookup(access, storyRepository),
-                storyRepository
+                storyRepository,
+                new ActivityLog(activityRepository)
         );
         lenient().when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
         lenient().when(boardRepository.findByWorkspaceId(workspace.getId())).thenReturn(Optional.of(board));
@@ -207,5 +216,37 @@ class MoveStoryServiceTest {
         verify(storyRepository).saveAll(saved.capture());
         assertThat(saved.getValue()).extracting(UserStory::getKey).containsExactly("PRU-6", "PRU-4", "PRU-7");
         assertThat(saved.getValue()).extracting(story -> story.getRank().length()).allMatch(length -> length <= 3);
+    }
+
+    private Activity theOnlyHistoryEntry() {
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository).save(saved.capture());
+
+        return saved.getValue();
+    }
+
+    @Test
+    void movingToAnotherColumnLeavesAHistoryEntryWithTheColumnNames() {
+        saves();
+
+        service.execute(move(progress, null, a.getId()));
+
+        Activity entry = theOnlyHistoryEntry();
+        assertThat(entry.type()).isEqualTo(ActivityType.STORY_MOVED);
+        assertThat(entry.storyId()).isEqualTo(moving.getId());
+        assertThat(entry.actorId()).isEqualTo(userId);
+        assertThat(entry.source()).isEqualTo(ChangeSource.USER);
+        assertThat(entry.fromValue()).isEqualTo(BoardFixtures.column(board, ColumnKind.TODO).getName());
+        assertThat(entry.toValue()).isEqualTo(BoardFixtures.column(board, ColumnKind.IN_PROGRESS).getName());
+    }
+
+    @Test
+    void reorderingInsideTheSameColumnLeavesNoHistory() {
+        when(storyRepository.findAllByColumnId(todo)).thenReturn(List.of(moving));
+        saves();
+
+        service.execute(move(todo, null, null));
+
+        verify(activityRepository, never()).save(any());
     }
 }

@@ -4,6 +4,7 @@ import io.github.arthursouto.prumo.application.port.in.CreateStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryCommand;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
 import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.BoardColumn;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
@@ -20,11 +21,14 @@ public class CreateStoryService implements CreateStoryUseCase {
     private final BoardProvisioner boards;
     private final BoardRepositoryPort boardRepository;
     private final StoryRepositoryPort storyRepository;
+    private final ActivityLog activity;
 
     public CreateStoryService(WorkspaceAccess access,
                               BoardProvisioner boards,
                               BoardRepositoryPort boardRepository,
-                              StoryRepositoryPort storyRepository) {
+                              StoryRepositoryPort storyRepository,
+                              ActivityLog activity) {
+        this.activity = activity;
         this.access = access;
         this.boards = boards;
         this.boardRepository = boardRepository;
@@ -42,7 +46,7 @@ public class CreateStoryService implements CreateStoryUseCase {
         String lastRank = inColumn.isEmpty() ? null : inColumn.get(inColumn.size() - 1).getRank();
         int number = boardRepository.allocateStoryNumber(workspace.getId());
 
-        return storyRepository.save(UserStory.create(
+        UserStory created = storyRepository.save(UserStory.create(
                 workspace.getId(),
                 number,
                 board.getKeyPrefix() + "-" + number,
@@ -55,5 +59,9 @@ public class CreateStoryService implements CreateStoryUseCase {
                 Checklists.labels(command.labels()),
                 Checklists.items(command.acceptanceCriteria(), List.of())
         ));
+
+        activity.record(workspace.getId(), created.getId(), Actor.user(command.userId()), ActivityType.STORY_CREATED, null, created.getTitle());
+
+        return created;
     }
 }

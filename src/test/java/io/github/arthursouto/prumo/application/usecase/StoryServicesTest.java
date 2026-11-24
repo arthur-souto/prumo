@@ -1,5 +1,7 @@
 package io.github.arthursouto.prumo.application.usecase;
 
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
+import io.github.arthursouto.prumo.domain.model.activity.Activity;
 import io.github.arthursouto.prumo.application.port.in.command.ChecklistInput;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.DeleteStoryCommand;
@@ -7,6 +9,7 @@ import io.github.arthursouto.prumo.application.port.in.command.GetStoryQuery;
 import io.github.arthursouto.prumo.application.port.in.command.ListStoriesQuery;
 import io.github.arthursouto.prumo.application.port.in.command.SetChecklistItemDoneCommand;
 import io.github.arthursouto.prumo.application.port.in.command.UpdateStoryCommand;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
@@ -37,6 +40,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class StoryServicesTest {
+
+    @Mock
+    private ActivityRepositoryPort activityRepository;
 
     @Mock
     private WorkspaceRepositoryPort workspaceRepository;
@@ -91,7 +97,7 @@ class StoryServicesTest {
                 .thenReturn(List.of(existing));
         when(storyRepository.save(any(UserStory.class))).thenAnswer(call -> call.getArgument(0));
 
-        UserStory created = new CreateStoryService(access, provisioner, boardRepository, storyRepository)
+        UserStory created = new CreateStoryService(access, provisioner, boardRepository, storyRepository, new ActivityLog(activityRepository))
                 .execute(create("  Reset  ", null));
 
         assertThat(created.getKey()).isEqualTo("PRU-2");
@@ -115,7 +121,7 @@ class StoryServicesTest {
         when(storyRepository.findAllByColumnId(progress)).thenReturn(List.of());
         when(storyRepository.save(any(UserStory.class))).thenAnswer(call -> call.getArgument(0));
 
-        UserStory created = new CreateStoryService(access, provisioner, boardRepository, storyRepository)
+        UserStory created = new CreateStoryService(access, provisioner, boardRepository, storyRepository, new ActivityLog(activityRepository))
                 .execute(create("X", progress));
 
         assertThat(created.getColumnId()).isEqualTo(progress);
@@ -126,7 +132,7 @@ class StoryServicesTest {
         asMember();
         when(boardRepository.findByWorkspaceId(workspace.getId())).thenReturn(Optional.of(board));
 
-        assertThatThrownBy(() -> new CreateStoryService(access, provisioner, boardRepository, storyRepository)
+        assertThatThrownBy(() -> new CreateStoryService(access, provisioner, boardRepository, storyRepository, new ActivityLog(activityRepository))
                 .execute(create("X", UUID.randomUUID())))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(boardRepository, never()).allocateStoryNumber(any());
@@ -139,7 +145,7 @@ class StoryServicesTest {
                 UUID.randomUUID(), workspace.getId(), "X", null, null, null, null, null, null
         );
 
-        assertThatThrownBy(() -> new CreateStoryService(access, provisioner, boardRepository, storyRepository)
+        assertThatThrownBy(() -> new CreateStoryService(access, provisioner, boardRepository, storyRepository, new ActivityLog(activityRepository))
                 .execute(command))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(boardRepository, never()).allocateStoryNumber(any());
@@ -193,7 +199,7 @@ class StoryServicesTest {
         when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
         when(storyRepository.save(story)).thenReturn(story);
 
-        new UpdateStoryService(lookup, storyRepository).execute(new UpdateStoryCommand(
+        new UpdateStoryService(lookup, storyRepository, new ActivityLog(activityRepository)).execute(new UpdateStoryCommand(
                 userId,
                 workspace.getId(),
                 "PRU-1",
@@ -245,5 +251,58 @@ class StoryServicesTest {
         assertThat(deleted.getValue()).isEqualTo(story.getId());
         assertThatThrownBy(() -> service.execute(new DeleteStoryCommand(UUID.randomUUID(), workspace.getId(), "PRU-1")))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void creatingAStoryLeavesAHistoryEntryByTheUser() {
+        asMember();
+        when(boardRepository.findByWorkspaceId(workspace.getId())).thenReturn(Optional.of(board));
+        when(boardRepository.allocateStoryNumber(workspace.getId())).thenReturn(2);
+        when(storyRepository.findAllByColumnId(BoardFixtures.column(board, ColumnKind.TODO).getId())).thenReturn(List.of());
+        when(storyRepository.save(any(UserStory.class))).thenAnswer(call -> call.getArgument(0));
+
+        UserStory created = new CreateStoryService(access, provisioner, boardRepository, storyRepository, new ActivityLog(activityRepository))
+                .execute(create("Reset", null));
+
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository).save(saved.capture());
+        assertThat(saved.getValue().type()).isEqualTo(ActivityType.STORY_CREATED);
+        assertThat(saved.getValue().storyId()).isEqualTo(created.getId());
+        assertThat(saved.getValue().actorId()).isEqualTo(userId);
+        assertThat(saved.getValue().toValue()).isEqualTo("Reset");
+    }
+
+    private UpdateStoryCommand editing(String title, StoryPriority priority) {
+        return new UpdateStoryCommand(userId, workspace.getId(), "PRU-1", title, null, priority, null, List.of(), List.of());
+    }
+
+    @Test
+    void anUpdateRecordsWhichFieldsItChangedAndNothingElse() {
+        asMember();
+        UserStory story = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
+        story.update("Old", null, StoryPriority.LOW, null, List.of(), List.of());
+        when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
+        when(storyRepository.save(story)).thenReturn(story);
+
+        new UpdateStoryService(lookup, storyRepository, new ActivityLog(activityRepository)).execute(editing("New", StoryPriority.HIGH));
+
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository).save(saved.capture());
+        assertThat(saved.getValue().type()).isEqualTo(ActivityType.STORY_UPDATED);
+        assertThat(saved.getValue().toValue()).isEqualTo("title,priority");
+        assertThat(saved.getValue().actorId()).isEqualTo(userId);
+    }
+
+    @Test
+    void savingWithoutChangingAnythingLeavesNoHistory() {
+        asMember();
+        UserStory story = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
+        story.update("Same", null, StoryPriority.LOW, null, List.of(), List.of());
+        when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
+        when(storyRepository.save(story)).thenReturn(story);
+
+        new UpdateStoryService(lookup, storyRepository, new ActivityLog(activityRepository)).execute(editing("Same", StoryPriority.LOW));
+
+        verify(activityRepository, never()).save(any());
     }
 }

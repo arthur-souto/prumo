@@ -126,6 +126,10 @@ import io.github.arthursouto.prumo.application.usecase.SuggestSubtaskBranchServi
 import io.github.arthursouto.prumo.application.usecase.CreateSubtaskBranchService;
 import io.github.arthursouto.prumo.application.usecase.SubtaskLookup;
 import io.github.arthursouto.prumo.application.usecase.SubtaskWorkflow;
+import io.github.arthursouto.prumo.application.port.in.ListActivityUseCase;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
+import io.github.arthursouto.prumo.application.usecase.ActivityLog;
+import io.github.arthursouto.prumo.application.usecase.ListActivityService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -382,9 +386,10 @@ public class UseCaseConfig {
             WorkspaceAccess access,
             BoardProvisioner boards,
             BoardRepositoryPort boardRepository,
-            StoryRepositoryPort storyRepository
+            StoryRepositoryPort storyRepository,
+            ActivityLog activity
     ) {
-        return new CreateStoryService(access, boards, boardRepository, storyRepository);
+        return new CreateStoryService(access, boards, boardRepository, storyRepository, activity);
     }
 
     @Bean
@@ -401,8 +406,8 @@ public class UseCaseConfig {
     }
 
     @Bean
-    UpdateStoryUseCase updateStoryUseCase(StoryLookup stories, StoryRepositoryPort storyRepository) {
-        return new UpdateStoryService(stories, storyRepository);
+    UpdateStoryUseCase updateStoryUseCase(StoryLookup stories, StoryRepositoryPort storyRepository, ActivityLog activity) {
+        return new UpdateStoryService(stories, storyRepository, activity);
     }
 
     @Bean
@@ -423,9 +428,10 @@ public class UseCaseConfig {
             WorkspaceAccess access,
             BoardProvisioner boards,
             StoryLookup stories,
-            StoryRepositoryPort storyRepository
+            StoryRepositoryPort storyRepository,
+            ActivityLog activity
     ) {
-        return new MoveStoryService(access, boards, stories, storyRepository);
+        return new MoveStoryService(access, boards, stories, storyRepository, activity);
     }
 
     @Bean
@@ -526,8 +532,8 @@ public class UseCaseConfig {
     }
 
     @Bean
-    AssignStoryUseCase assignStoryUseCase(StoryLookup stories, WorkspaceAccess access, StoryRepositoryPort storyRepository) {
-        return new AssignStoryService(stories, access, storyRepository);
+    AssignStoryUseCase assignStoryUseCase(StoryLookup stories, WorkspaceAccess access, StoryRepositoryPort storyRepository, ActivityLog activity) {
+        return new AssignStoryService(stories, access, storyRepository, activity);
     }
 
     @Bean
@@ -541,8 +547,23 @@ public class UseCaseConfig {
     }
 
     @Bean
-    SubtaskWorkflow subtaskWorkflow(SubtaskRepositoryPort subtaskRepository, StoryRepositoryPort storyRepository) {
-        return new SubtaskWorkflow(subtaskRepository, storyRepository);
+    ActivityLog activityLog(ActivityRepositoryPort activityRepository) {
+        return new ActivityLog(activityRepository);
+    }
+
+    @Bean
+    ListActivityUseCase listActivityUseCase(
+            StoryLookup stories,
+            SubtaskLookup lookup,
+            ActivityRepositoryPort activityRepository,
+            UserRepositoryPort userRepository
+    ) {
+        return new ListActivityService(stories, lookup, activityRepository, userRepository);
+    }
+
+    @Bean
+    SubtaskWorkflow subtaskWorkflow(SubtaskRepositoryPort subtaskRepository, StoryRepositoryPort storyRepository, ActivityLog activity) {
+        return new SubtaskWorkflow(subtaskRepository, storyRepository, activity);
     }
 
     @Bean
@@ -554,9 +575,10 @@ public class UseCaseConfig {
             SubtaskRepositoryPort subtaskRepository,
             ConnectedRepositoryPort repositoryPort,
             GithubTokens tokens,
-            GithubPort github
+            GithubPort github,
+            ActivityLog activity
     ) {
-        return new CreateSubtaskService(stories, lookup, boards, boardRepository, subtaskRepository, repositoryPort, tokens, github);
+        return new CreateSubtaskService(stories, lookup, boards, boardRepository, subtaskRepository, repositoryPort, tokens, github, activity);
     }
 
     @Bean
