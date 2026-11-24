@@ -38,7 +38,13 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
 
     const found = workspaces.find((candidate) => candidate.id === match[1]) ?? null;
     const section = match[2];
-    const key: NavKey = section === "board" || section === "backlog" || section === "repositories" ? section : "workspaceSettings";
+    /* A subtask opens from the board, so it keeps the board entry highlighted (but, unlike the board, its page scrolls). */
+    const key: NavKey =
+      section === "board" || section === "backlog" || section === "repositories"
+        ? section
+        : section === "subtasks"
+          ? "board"
+          : "workspaceSettings";
     const title = t(`nav.${key}`);
 
     return {
@@ -49,7 +55,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
         ...(found ? [{ label: found.name, href: `/workspaces/${found.id}/board` }] : []),
         { label: title },
       ] as Crumb[],
-      scroll: key !== "board",
+      scroll: section !== "board",
     };
   }, [pathname, workspaces, t]);
 
