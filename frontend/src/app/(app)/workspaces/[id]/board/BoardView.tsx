@@ -33,7 +33,7 @@ import {
   type Filters,
   type Layout,
 } from "@/lib/board-utils";
-import { PRIORITIES, type Board, type Column, type Priority, type Repository, type Story } from "@/lib/board-types";
+import { PRIORITIES, type Board, type Column, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
 import { sendJson } from "@/lib/client";
 import modal from "../../../modal-form.module.css";
 import settings from "../workspace.module.css";
@@ -43,6 +43,7 @@ import { StoryDrawer } from "./StoryDrawer";
 import styles from "./board.module.css";
 
 type BoardViewProps = {
+  members: Member[];
   workspaceId: string;
   canManageBoard: boolean;
   initialBoard: Board;
@@ -61,6 +62,7 @@ export function BoardView({
   canManageBoard,
   initialBoard,
   initialRepositories,
+  members,
   hasGithubToken,
 }: BoardViewProps) {
   const t = useT();
@@ -452,6 +454,7 @@ export function BoardView({
 
             return (
               <BoardColumn
+              members={members}
                 key={column.id}
                 column={column}
                 stories={visible.filter((story) => matchesFilters(story, filters))}
@@ -474,7 +477,7 @@ export function BoardView({
         <DragOverlay>
           {active ? (
             <div className={`${styles.card} ${styles.overlay}`}>
-              <CardContent story={active} t={t} />
+              <CardContent story={active} assignee={members.find((member) => member.id === active.assigneeId)} status={columns.find((column) => column.id === active.columnId)?.name} t={t} />
             </div>
           ) : null}
         </DragOverlay>
@@ -572,6 +575,7 @@ export function BoardView({
       {selected ? (
         <StoryDrawer
           key={selected.id}
+          members={members}
           workspaceId={workspaceId}
           story={selected}
           columns={columns}

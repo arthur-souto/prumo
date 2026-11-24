@@ -64,6 +64,7 @@ export default async function WorkspacePage({ params, searchParams }: WorkspaceP
             workspaceId={workspace.id}
             keyPrefix={board.keyPrefix}
             automationEnabled={board.automationEnabled}
+            consolidateStories={board.consolidateStories}
             hasStories={board.stories.length > 0}
             canEdit={workspace.role === "OWNER" || workspace.role === "ADMIN"}
           />

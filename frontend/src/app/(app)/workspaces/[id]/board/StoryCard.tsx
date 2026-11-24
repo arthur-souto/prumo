@@ -2,9 +2,10 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GitBranch, GitMerge, GitPullRequest } from "lucide-react";
+import { Bookmark, GitBranch, GitMerge, GitPullRequest, ListChecks } from "lucide-react";
 import { useT } from "@/i18n/client";
-import type { Story } from "@/lib/board-types";
+import { Avatar } from "@/components/ui/Avatar";
+import type { Member, Story } from "@/lib/board-types";
 import { PriorityBadge } from "./PriorityBadge";
 import styles from "./board.module.css";
 
@@ -12,10 +13,12 @@ type StoryCardProps = {
   story: Story;
   disabled: boolean;
   landed: boolean;
+  status?: string;
+  assignee?: Member;
   onOpen: (story: Story) => void;
 };
 
-export function StoryCard({ story, disabled, landed, onOpen }: StoryCardProps) {
+export function StoryCard({ story, disabled, landed, status, assignee, onOpen }: StoryCardProps) {
   const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: story.id,
@@ -31,7 +34,7 @@ export function StoryCard({ story, disabled, landed, onOpen }: StoryCardProps) {
       {...attributes}
       {...listeners}
     >
-      <CardContent story={story} onOpen={onOpen} t={t} />
+      <CardContent story={story} status={status} assignee={assignee} onOpen={onOpen} t={t} />
     </li>
   );
 }
@@ -48,12 +51,23 @@ function pullRequestIcon(story: Story) {
   return { Icon: GitPullRequest, className: "" };
 }
 
+/** Stable colour per label, so the same label always looks the same. */
+function labelTone(label: string) {
+  let hash = 0;
+  for (const char of label) hash = (hash * 31 + char.charCodeAt(0)) % 6;
+  return hash + 1;
+}
+
 export function CardContent({
   story,
+  status,
+  assignee,
   onOpen,
   t,
 }: {
   story: Story;
+  status?: string;
+  assignee?: Member;
   onOpen?: (story: Story) => void;
   t: ReturnType<typeof useT>;
 }) {
@@ -68,19 +82,33 @@ export function CardContent({
       {story.labels.length > 0 ? (
         <ul className={styles.labels}>
           {story.labels.map((label) => (
-            <li key={label} className={styles.label}>
+            <li key={label} className={styles.label} style={{ background: `var(--avatar-${labelTone(label)})` }}>
               {label}
             </li>
           ))}
         </ul>
       ) : null}
 
+      {status ? <span className={styles.status}>{status}</span> : null}
+
       <div className={styles.cardFooter}>
+        <Bookmark size={14} aria-hidden="true" className={styles.typeIcon} />
         <span className={styles.key}>{story.key}</span>
         <span className={styles.spacer} />
         {story.repositoryId ? (
           <span className={styles.icon} title={t("board.hasRepository")} role="img" aria-label={t("board.hasRepository")}>
             <GitBranch size={14} aria-hidden="true" />
+          </span>
+        ) : null}
+        {story.subtasks && story.subtasks.total > 0 ? (
+          <span
+            className={`${styles.subtaskCount} ${story.subtasks.done === story.subtasks.total ? styles.subtasksDone : ""}`}
+            title={t("board.subtaskProgress", { done: story.subtasks.done, total: story.subtasks.total })}
+            role="img"
+            aria-label={t("board.subtaskProgress", { done: story.subtasks.done, total: story.subtasks.total })}
+          >
+            <ListChecks size={14} aria-hidden="true" />
+            {story.subtasks.done}/{story.subtasks.total}
           </span>
         ) : null}
         {pullRequest ? (
@@ -93,10 +121,15 @@ export function CardContent({
             <pullRequest.Icon size={14} aria-hidden="true" />
           </span>
         ) : null}
-        <PriorityBadge priority={story.priority} label={t(`priority.${story.priority}`)} />
         {story.storyPoints !== null ? (
           <span className={styles.points} title={t("board.points", { count: story.storyPoints })}>
             {story.storyPoints}
+          </span>
+        ) : null}
+        <PriorityBadge priority={story.priority} label={t(`priority.${story.priority}`)} />
+        {assignee ? (
+          <span className={styles.assignee} title={assignee.name}>
+            <Avatar name={assignee.name} seed={assignee.id} src={assignee.avatarUrl} size="sm" />
           </span>
         ) : null}
       </div>

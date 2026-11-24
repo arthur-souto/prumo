@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { backendFetch } from "./backend";
 import { readAccessToken } from "./cookies";
-import type { Board, GithubConnection, Repository } from "./board-types";
+import type { Board, GithubConnection, Repository, Member, Story, Subtask } from "./board-types";
 import type { Workspace } from "./workspace-types";
 
 async function authedGet(path: string) {
@@ -45,4 +45,22 @@ export async function getGithubConnection(): Promise<GithubConnection> {
   const response = await authedGet("/api/v1/github/connection");
 
   return response?.ok ? ((await response.json()) as GithubConnection) : { connected: false, login: null, connectedAt: null };
+}
+
+export async function listMembers(workspaceId: string): Promise<Member[]> {
+  const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/members`);
+
+  return response?.ok ? ((await response.json()) as Member[]) : [];
+}
+
+export async function getSubtask(workspaceId: string, key: string): Promise<Subtask | null> {
+  const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/subtasks/${encodeURIComponent(key)}`);
+
+  return response?.ok ? ((await response.json()) as Subtask) : null;
+}
+
+export async function getStory(workspaceId: string, key: string): Promise<Story | null> {
+  const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/stories/${encodeURIComponent(key)}`);
+
+  return response?.ok ? ((await response.json()) as Story) : null;
 }

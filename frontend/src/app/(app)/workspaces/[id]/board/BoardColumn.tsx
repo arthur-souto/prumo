@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { DropdownContent, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from "@/components/ui/DropdownMenu";
 import { IconButton } from "@/components/ui/IconButton";
 import { useT } from "@/i18n/client";
-import type { Column, Story } from "@/lib/board-types";
+import type { Column, Story, Member } from "@/lib/board-types";
 import { StoryCard } from "./StoryCard";
 import styles from "./board.module.css";
 
 type BoardColumnProps = {
   column: Column;
+  members: Member[];
   stories: Story[];
   allCount: number;
   filtering: boolean;
@@ -30,6 +31,7 @@ type BoardColumnProps = {
 
 export function BoardColumn({
   column,
+  members,
   stories,
   allCount,
   filtering,
@@ -84,7 +86,7 @@ export function BoardColumn({
       <SortableContext items={stories.map((story) => story.id)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className={styles.cards}>
           {stories.map((story) => (
-            <StoryCard key={story.id} story={story} disabled={dragDisabled} landed={landedId === story.id} onOpen={onOpen} />
+            <StoryCard key={story.id} story={story} assignee={members.find((member) => member.id === story.assigneeId)} status={column.name} disabled={dragDisabled} landed={landedId === story.id} onOpen={onOpen} />
           ))}
           {stories.length === 0 ? <li className={styles.emptyColumn}>{filtering ? t("board.noMatchColumn") : t("board.emptyColumn")}</li> : null}
         </ul>

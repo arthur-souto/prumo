@@ -26,7 +26,14 @@ export function Drawer({ open, onClose, title, label, children, width = "md", he
     <Dialog.Root open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.scrim} />
-        <Dialog.Content className={`${styles.panel} ${styles[width]}`} aria-label={label} aria-describedby={undefined}>
+        <Dialog.Content className={`${styles.panel} ${styles[width]}`} aria-label={label}
+          aria-describedby={undefined}
+          tabIndex={-1}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            (event.currentTarget as HTMLElement).focus();
+          }}
+        >
           <header className={styles.header}>
             <Dialog.Title asChild>
               <div className={styles.title}>{title}</div>

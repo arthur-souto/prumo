@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getT } from "@/i18n/server";
 import { requireUser } from "@/lib/session";
-import { getBoard, getGithubConnection, getWorkspace, listConnectedRepositories } from "@/lib/workspaces";
+import { getBoard, getGithubConnection, getWorkspace, listConnectedRepositories, listMembers } from "@/lib/workspaces";
 import { WorkspaceShell } from "../WorkspaceShell";
 import { BoardView } from "./BoardView";
 
@@ -21,11 +21,12 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
   const { id } = await params;
   const { refreshed } = await searchParams;
   await requireUser(`/workspaces/${id}/board`, refreshed);
-  const [workspace, board, repositories, connection ] = await Promise.all([
+  const [workspace, board, repositories, connection, members] = await Promise.all([
     getWorkspace(id),
     getBoard(id),
     listConnectedRepositories(id),
     getGithubConnection(),
+    listMembers(id),
   ]);
 
   if (!workspace || !board) {
@@ -35,6 +36,7 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
   return (
     <WorkspaceShell active="board">
       <BoardView
+          members={members}
           workspaceId={workspace.id}
           canManageBoard={workspace.role === "OWNER" || workspace.role === "ADMIN"}
           initialBoard={board}

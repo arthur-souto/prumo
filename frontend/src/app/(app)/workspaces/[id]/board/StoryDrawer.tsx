@@ -1,8 +1,8 @@
 "use client";
 
-import { Copy, ExternalLink, GitBranch, GitMerge, GitPullRequest, MoreHorizontal, Plus, Trash2, X } from "lucide-react";
+import { Copy, ExternalLink, GitMerge, GitPullRequest, MoreHorizontal, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Alert } from "@/components/ui/Alert";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -22,6 +22,7 @@ import {
   PRIORITIES,
   type ChecklistItem,
   type Column,
+  type Member,
   type Priority,
   type PullRequestState,
   type Repository,
@@ -30,12 +31,14 @@ import {
 import { isHttpUrl, parseLabels } from "@/lib/board-utils";
 import { sendJson } from "@/lib/client";
 import { formatDate } from "@/lib/workspace-types";
+import { Subtasks } from "./Subtasks";
 import styles from "./StoryDrawer.module.css";
 
 type StoryDrawerProps = {
   workspaceId: string;
   story: Story;
   columns: Column[];
+  members: Member[];
   repositories: Repository[];
   hasGithubToken: boolean;
   onChange: (story: Story) => void;
@@ -52,6 +55,7 @@ export function StoryDrawer({
   workspaceId,
   story,
   columns,
+  members,
   repositories,
   hasGithubToken,
   onChange,
@@ -68,14 +72,12 @@ export function StoryDrawer({
   const [priority, setPriority] = useState<Priority>(story.priority);
   const [points, setPoints] = useState(story.storyPoints === null ? "" : String(story.storyPoints));
   const [labels, setLabels] = useState(story.labels.join(", "));
-  const [subtasks, setSubtasks] = useState<ChecklistItem[]>(story.subtasks);
   const [criteria, setCriteria] = useState<ChecklistItem[]>(story.acceptanceCriteria);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState<"delete" | "discard" | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [branch, setBranch] = useState("");
   const [githubError, setGithubError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
@@ -88,22 +90,7 @@ export function StoryDrawer({
     priority !== story.priority ||
     points !== (story.storyPoints === null ? "" : String(story.storyPoints)) ||
     JSON.stringify(parseLabels(labels)) !== JSON.stringify(story.labels) ||
-    JSON.stringify(subtasks) !== JSON.stringify(story.subtasks) ||
     JSON.stringify(criteria) !== JSON.stringify(story.acceptanceCriteria);
-
-  useEffect(() => {
-    if (!story.repositoryId || story.branchName) return;
-
-    let cancelled = false;
-
-    sendJson<{ name: string }>(`${base}/branch-suggestion`, "GET").then((result) => {
-      if (!cancelled && result.ok && result.data) setBranch(result.data.name);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [base, story.repositoryId, story.branchName]);
 
   function requestClose() {
     if (dirty) {
@@ -126,16 +113,14 @@ export function StoryDrawer({
       priority,
       storyPoints: points === "" ? null : Number(points),
       labels: parseLabels(labels),
-      subtasks,
       acceptanceCriteria: criteria,
     });
 
     setSaving(false);
 
     if (result.ok && result.data) {
-      onChange(result.data);
+      onChange({ ...result.data, subtasks: result.data.subtasks ?? story.subtasks });
       setTitle(result.data.title);
-      setSubtasks(result.data.subtasks);
       setCriteria(result.data.acceptanceCriteria);
       toast({ tone: "success", title: t("story.saved") });
       return;
@@ -167,6 +152,17 @@ export function StoryDrawer({
     }
   }
 
+  async function assign(assigneeId: string) {
+    const result = await sendJson<Story>(`${base}/assignee`, "PUT", { assigneeId: assigneeId === "" ? null : assigneeId });
+
+    if (!result.ok || !result.data) {
+      setError(errorMessage(t, result.code, result.reason));
+      return;
+    }
+
+    onChange(result.data);
+  }
+
   async function copyKey() {
     try {
       await navigator.clipboard.writeText(story.key);
@@ -192,13 +188,6 @@ export function StoryDrawer({
 
   function linkRepository(repositoryId: string) {
     return github<Story>("repository", "PUT", { repositoryId: repositoryId === "" ? null : repositoryId }, onChange);
-  }
-
-  function createBranch() {
-    return github<Story>("branch", "POST", { name: branch }, (updated) => {
-      onChange(updated);
-      toast({ tone: "success", title: t("story.branchCreated") });
-    });
   }
 
   async function createRepository(name: string, isPrivate: boolean) {
@@ -273,11 +262,12 @@ export function StoryDrawer({
 
             <section className={styles.details}>
               <label className={styles.field}>
-                <span>{t("story.status")}</span>
-                <Select value={story.columnId} onChange={(event) => void changeStatus(event.target.value)}>
-                  {orderedColumns.map((column) => (
-                    <option key={column.id} value={column.id}>
-                      {column.name}
+                <span>{t("story.assignee")}</span>
+                <Select value={story.assigneeId ?? ""} onChange={(event) => void assign(event.target.value)}>
+                  <option value="">{t("story.unassigned")}</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
                     </option>
                   ))}
                 </Select>
@@ -292,24 +282,30 @@ export function StoryDrawer({
                   ))}
                 </Select>
               </label>
-              <TextField
-                label={t("story.points")}
-                inline
-                type="number"
-                min={0}
-                max={1000}
-                value={points}
-                error={fields.storyPoints}
-                onChange={(event) => setPoints(event.target.value)}
-              />
-              <TextField
-                label={t("story.labels")}
-                inline
-                value={labels}
-                hint={t("story.labelsHint")}
-                error={fields.labels}
-                onChange={(event) => setLabels(event.target.value)}
-              />
+              <label className={styles.field}>
+                <span>{t("story.points")}</span>
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={points}
+                  aria-invalid={fields.storyPoints ? true : undefined}
+                  onChange={(event) => setPoints(event.target.value)}
+                />
+                {fields.storyPoints ? <small className={styles.fieldError} role="alert">{fields.storyPoints}</small> : null}
+              </label>
+              <label className={styles.field}>
+                <span>{t("story.labels")}</span>
+                <input
+                  className={styles.input}
+                  value={labels}
+                  placeholder={t("story.labelsHint")}
+                  aria-invalid={fields.labels ? true : undefined}
+                  onChange={(event) => setLabels(event.target.value)}
+                />
+                {fields.labels ? <small className={styles.fieldError} role="alert">{fields.labels}</small> : null}
+              </label>
             </section>
 
 
@@ -339,7 +335,12 @@ export function StoryDrawer({
             </section>
 
             <Checklist title={t("story.acceptanceCriteria")} placeholder={t("story.criterionPlaceholder")} items={criteria} onChange={setCriteria} />
-            <Checklist title={t("story.subtasks")} placeholder={t("story.subtaskPlaceholder")} items={subtasks} onChange={setSubtasks} />
+            <Subtasks
+              workspaceId={workspaceId}
+              story={story}
+              repository={repository}
+              onProgress={(progress) => onChange({ ...story, subtasks: progress })}
+            />
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>{t("story.pullRequests")}</h3>
               {story.pullRequests.length === 0 ? (
@@ -398,28 +399,6 @@ export function StoryDrawer({
                   </Select>
                 </label>
               )}
-
-              {repository ? (
-                story.branchName ? (
-                  <p className={styles.branch}>
-                    <GitBranch size={14} aria-hidden="true" />
-                    <a
-                      href={isHttpUrl(repository.htmlUrl) ? `${repository.htmlUrl}/tree/${story.branchName}` : undefined}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {story.branchName}
-                    </a>
-                  </p>
-                ) : (
-                  <div className={styles.stack}>
-                    <TextField label={t("story.branchName")} value={branch} onChange={(event) => setBranch(event.target.value)} />
-                    <Button type="button" size="sm" icon={<GitBranch size={14} aria-hidden="true" />} loading={busy} disabled={branch.trim() === ""} onClick={createBranch}>
-                      {t("story.createBranch")}
-                    </Button>
-                  </div>
-                )
-              ) : null}
 
               {hasGithubToken && !story.repositoryId ? (
                 <NewRepositoryForm defaultName={story.key.toLowerCase()} busy={busy} onCreate={createRepository} />

@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
 import { errorMessage, useT } from "@/i18n/client";
-import { PRIORITIES, type Board, type Priority, type Repository, type Story } from "@/lib/board-types";
+import { PRIORITIES, type Board, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
 import { EMPTY_FILTERS, allLabels, hasFilters, matchesFilters, type Filters } from "@/lib/board-utils";
 import { sendJson } from "@/lib/client";
 import { StoryDrawer } from "../board/StoryDrawer";
@@ -20,10 +20,11 @@ type BacklogViewProps = {
   workspaceId: string;
   board: Board;
   repositories: Repository[];
+  members: Member[];
   hasGithubToken: boolean;
 };
 
-export function BacklogView({ workspaceId, board, repositories: initialRepositories, hasGithubToken }: BacklogViewProps) {
+export function BacklogView({ workspaceId, board, repositories: initialRepositories, members, hasGithubToken }: BacklogViewProps) {
   const t = useT();
   const toast = useToast();
   const base = `/api/workspaces/${workspaceId}`;
@@ -94,7 +95,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
       priority,
       storyPoints: story.storyPoints,
       labels: story.labels,
-      subtasks: story.subtasks,
+      subtasks: story.subtasks ?? [],
       acceptanceCriteria: story.acceptanceCriteria,
     });
 
@@ -390,6 +391,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
       {open ? (
         <StoryDrawer
           key={open.id}
+          members={members}
           workspaceId={workspaceId}
           story={open}
           columns={columns}

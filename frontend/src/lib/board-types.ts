@@ -6,13 +6,34 @@ export const PRIORITIES: Priority[] = ["URGENT", "HIGH", "MEDIUM", "LOW"];
 
 export type ChecklistItem = { id: string | null; text: string; done: boolean };
 
+export type SubtaskStatus = "TO_DO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
+
+export const SUBTASK_STATUSES: SubtaskStatus[] = ["TO_DO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
+
 export type PullRequest = {
+  subtaskId?: string | null;
   number: number;
   title: string;
   state: PullRequestState;
   url: string;
   branch: string | null;
   repositoryId: string;
+};
+
+export type SubtaskProgress = { total: number; done: number };
+
+export type Subtask = {
+  id: string;
+  key: string;
+  storyKey: string;
+  title: string;
+  description: string | null;
+  status: SubtaskStatus;
+  position: number;
+  branchName: string | null;
+  pullRequests: PullRequest[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Story = {
@@ -24,10 +45,11 @@ export type Story = {
   storyPoints: number | null;
   columnId: string;
   labels: string[];
-  subtasks: ChecklistItem[];
+  /** Progress of the story's subtasks; absent when the endpoint does not report it (e.g. after a single-story update). */
+  subtasks?: SubtaskProgress | null;
   acceptanceCriteria: ChecklistItem[];
   repositoryId: string | null;
-  branchName: string | null;
+  assigneeId: string | null;
   pullRequests: PullRequest[];
   createdAt: string;
   updatedAt: string;
@@ -38,6 +60,7 @@ export type Column = { id: string; name: string; kind: ColumnKind; position: num
 export type Board = {
   keyPrefix: string;
   automationEnabled: boolean;
+  consolidateStories: boolean;
   columns: Column[];
   stories: Story[];
 };
@@ -55,3 +78,10 @@ export type Repository = {
 };
 
 export type GithubConnection = { connected: boolean; login: string | null; connectedAt: string | null };
+
+export type Member = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+};

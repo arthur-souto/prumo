@@ -14,15 +14,17 @@ type BoardSettingsProps = {
   workspaceId: string;
   keyPrefix: string;
   automationEnabled: boolean;
+  consolidateStories: boolean;
   hasStories: boolean;
   canEdit: boolean;
 };
 
-export function BoardSettings({ workspaceId, keyPrefix, automationEnabled, hasStories, canEdit }: BoardSettingsProps) {
+export function BoardSettings({ workspaceId, keyPrefix, automationEnabled, consolidateStories, hasStories, canEdit }: BoardSettingsProps) {
   const router = useRouter();
   const t = useT();
   const [prefix, setPrefix] = useState(keyPrefix);
   const [automation, setAutomation] = useState(automationEnabled);
+  const [consolidate, setConsolidate] = useState(consolidateStories);
   const [error, setError] = useState<string>();
   const [fields, setFields] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -37,6 +39,7 @@ export function BoardSettings({ workspaceId, keyPrefix, automationEnabled, hasSt
     const result = await sendJson(`/api/workspaces/${workspaceId}/board/settings`, "PUT", {
       keyPrefix: hasStories ? undefined : prefix,
       automationEnabled: automation,
+      consolidateStories: consolidate,
     });
 
     setSaving(false);
@@ -76,6 +79,13 @@ export function BoardSettings({ workspaceId, keyPrefix, automationEnabled, hasSt
           <span className={styles.checkText}>
             <span>{t("boardSettings.automation")}</span>
             <span className={styles.hint}>{t("boardSettings.automationHint")}</span>
+          </span>
+        </label>
+        <label className={styles.check}>
+          <input type="checkbox" checked={consolidate} disabled={!canEdit} onChange={(event) => setConsolidate(event.target.checked)} />
+          <span className={styles.checkText}>
+            <span>{t("boardSettings.consolidate")}</span>
+            <span className={styles.hint}>{t("boardSettings.consolidateHint")}</span>
           </span>
         </label>
         {canEdit ? (

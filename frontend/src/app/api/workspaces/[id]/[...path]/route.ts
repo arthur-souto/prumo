@@ -4,7 +4,7 @@ import { proxyToBackend } from "@/lib/proxy";
 type Context = { params: Promise<{ id: string; path: string[] }> };
 
 const SEGMENT = /^[A-Za-z0-9._-]+$/;
-const ALLOWED_ROOTS = new Set(["board", "stories", "repositories"]);
+const ALLOWED_ROOTS = new Set(["board", "stories", "subtasks", "repositories"]);
 
 async function forward(request: Request, { params }: Context) {
   const { id, path } = await params;
