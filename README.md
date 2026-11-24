@@ -183,7 +183,11 @@ npm install
 npm run dev
 ```
 
-Telas: `/login`, `/register`, `/` (workspaces), `/settings` (token do GitHub), `/workspaces/{id}` (configurações), `/board`, `/backlog`, `/repositories` e `/subtasks/{key}`. O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend.
+Telas: `/login`, `/register`, `/` (workspaces), `/settings` (token do GitHub), `/workspaces/{id}` (configurações), `/board`, `/backlog`, `/repositories` e `/subtasks/{key}`. O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend (para outro endereço, veja [docs/rede-local.md](docs/rede-local.md)). O front encaminha `/oauth2/*` e `/login/oauth2/*` ao backend, por isso o login com GitHub começa e termina na origem do front.
+
+#### Acesso pela rede local (opcional)
+
+Por padrão tudo responde só em `localhost`: o front (`npm run dev`), o backend (`SERVER_ADDRESS=127.0.0.1`) e o banco (`POSTGRES_BIND=127.0.0.1`). Para outros computadores da rede usarem o app, rode `npm run dev:lan` e abra o endereço `Network: http://<ip>:3000` que o Next mostra. O login com GitHub a partir de outro computador precisa de configuração extra. Para desfazer, volte a usar `npm run dev`. Para alternar rápido entre o modo local e o de rede (credenciais OAuth e URLs incluídas) use `scripts/mode.sh local|lan|status`. O passo a passo, todas as variáveis e a solução de problemas estão em [docs/rede-local.md](docs/rede-local.md).
 
 ### Idiomas
 
