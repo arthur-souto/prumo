@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -339,5 +341,109 @@ class SubtaskPullRequestSyncTest {
         assertThat(saved.getValue().source()).isEqualTo(ChangeSource.GITHUB);
         assertThat(saved.getValue().actorId()).isNull();
         assertThat(saved.getValue().toValue()).isEqualTo("IN_REVIEW");
+    }
+
+    @ParameterizedTest(name = "{1} pull request on a subtask that is {0} leaves it {2}")
+    @CsvSource({
+            "TO_DO, OPEN, IN_REVIEW",
+            "IN_PROGRESS, OPEN, IN_REVIEW",
+            "IN_REVIEW, OPEN, IN_REVIEW",
+            "DONE, OPEN, IN_REVIEW",
+            "TO_DO, MERGED, DONE",
+            "IN_PROGRESS, MERGED, DONE",
+            "IN_REVIEW, MERGED, DONE",
+            "DONE, MERGED, DONE",
+            "TO_DO, CLOSED, TO_DO",
+            "IN_PROGRESS, CLOSED, IN_PROGRESS",
+            "IN_REVIEW, CLOSED, IN_PROGRESS",
+            "DONE, CLOSED, DONE"
+    })
+    void everyPullRequestEventMapsToTheExpectedStatusFromEveryStartingStatus(SubtaskStatus start, PullRequestState event, SubtaskStatus expected) {
+        board.setAutomationEnabled(true);
+        subtask.changeStatus(start);
+        page(event, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @EnumSource(PullRequestState.class)
+    void withAutomationOffNoPullRequestEventTouchesTheSubtaskOrItsStory(PullRequestState event) {
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW);
+        page(event, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.USER);
+        assertThat(story.getColumnId()).isEqualTo(board.first().getId());
+        verify(subtaskRepository, never()).save(any(Subtask.class));
+        verify(storyRepository, never()).save(any(UserStory.class));
+    }
+
+    @Test
+    void aPullRequestCitingTwoSubtasksMovesBothOfThem() {
+        board.setAutomationEnabled(true);
+        page(PullRequestState.MERGED, "feature/PRU-13-endpoint", "PRU-13 PRU-14: endpoint and its tests");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
+        assertThat(sibling.getStatus()).isEqualTo(SubtaskStatus.DONE);
+    }
+
+    @Test
+    void theKeyInTheBranchIsMatchedIgnoringCase() {
+        board.setAutomationEnabled(true);
+        page(PullRequestState.OPEN, "feature/pru-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
+    }
+
+    @Test
+    void aLongerKeyThatOnlyStartsLikeTheSubtaskKeyDoesNotTouchIt() {
+        board.setAutomationEnabled(true);
+        page(PullRequestState.MERGED, "feature/PRU-130-other-thing", "Unrelated work");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.TO_DO);
+        assertThat(sibling.getStatus()).isEqualTo(SubtaskStatus.TO_DO);
+        verify(storyRepository, never()).savePullRequest(any());
+    }
+
+    @Test
+    void aKnownOpenPullRequestThatIsNowMergedFinishesTheSubtask() {
+        board.setAutomationEnabled(true);
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW, ChangeSource.GITHUB);
+        PullRequest open = PullRequest.track(story.getId(), repository.getId(), 7, "Add endpoint", PullRequestState.OPEN,
+                "https://github.com/arthur/prumo/pull/7", "feature/PRU-13-endpoint", now).forSubtask(subtask.getId());
+        when(storyRepository.findPullRequest(story.getId(), repository.getId(), 7)).thenReturn(Optional.of(open));
+        page(PullRequestState.MERGED, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
+    }
+
+    @ParameterizedTest(name = "merged and abandoned pull requests of one subtask, merged one listed first: {0}")
+    @ValueSource(booleans = {true, false})
+    void anAbandonedPullRequestNeverUndoesTheMergedOneWhateverTheOrderGithubListsThem(boolean mergedFirst) {
+        board.setAutomationEnabled(true);
+        RemotePullRequest merged = new RemotePullRequest(7, "Add endpoint", PullRequestState.MERGED,
+                "https://github.com/arthur/prumo/pull/7", "feature/PRU-13-endpoint", now);
+        RemotePullRequest abandoned = new RemotePullRequest(8, "First attempt", PullRequestState.CLOSED,
+                "https://github.com/arthur/prumo/pull/8", "feature/PRU-13-first-try", now);
+        when(github.listPullRequests("ghp_plain", "arthur", "prumo", null)).thenReturn(new PullRequestPage(
+                false, "\"etag\"", mergedFirst ? List.of(merged, abandoned) : List.of(abandoned, merged)));
+
+        syncer.sync(repository);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
     }
 }
