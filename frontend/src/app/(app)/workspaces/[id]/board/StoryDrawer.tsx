@@ -32,6 +32,7 @@ import { isHttpUrl, parseLabels } from "@/lib/board-utils";
 import { sendJson } from "@/lib/client";
 import { formatDate } from "@/lib/workspace-types";
 import { ActivityFeed } from "./ActivityFeed";
+import { Comments } from "./Comments";
 import { Subtasks } from "./Subtasks";
 import styles from "./StoryDrawer.module.css";
 
@@ -377,6 +378,7 @@ export function StoryDrawer({
                 </ul>
               )}
             </section>
+            <Comments workspaceId={workspaceId} scope={`stories/${story.key}`} />
             <ActivityFeed
               workspaceId={workspaceId}
               scope={`stories/${story.key}`}
