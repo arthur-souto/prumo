@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ---------- Top bar ---------- */
@@ -184,7 +185,7 @@
 }
 
 .mainFill {
-  height: calc(100vh - var(--layout-nav-height));
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -201,6 +202,7 @@
   flex-direction: column;
   gap: var(--space-3);
   height: calc(100vh - var(--layout-nav-height));
+  height: calc(100dvh - var(--layout-nav-height));
   padding: var(--space-3) var(--space-2);
   background: var(--surface-card);
   border-right: var(--border-width) solid var(--border-default);
@@ -379,3 +381,26 @@
   }
 }
 
+
+/* Pages that fill the window (the board): the shell is exactly one screen tall and the grid hands the rest to <main>,
+   so no height depends on a vh calculation and the document itself never scrolls. */
+@media (min-width: 52.0625rem) {
+  .appFill {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .appFill .body {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .appFill .sidebar {
+    position: static;
+    align-self: stretch;
+    height: auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}

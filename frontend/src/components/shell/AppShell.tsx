@@ -88,7 +88,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
   }
 
   return (
-    <div className={`${styles.app} ${collapsed ? styles.collapsed : ""} ${menuOpen ? styles.menuOpen : ""}`}>
+    <div className={`${styles.app} ${collapsed ? styles.collapsed : ""} ${menuOpen ? styles.menuOpen : ""} ${fill ? styles.appFill : ""}`}>
       <Topbar user={user} workspaceId={workspace?.id} crumbs={crumbs} onOpenMenu={() => setMenuOpen(true)} />
       <div className={styles.body}>
         <Sidebar
