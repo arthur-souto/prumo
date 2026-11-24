@@ -18,22 +18,32 @@ public final class Board {
     private final UUID workspaceId;
     private String keyPrefix;
     private boolean automationEnabled;
+    private boolean consolidateStories;
     private final List<BoardColumn> columns;
 
-    private Board(UUID workspaceId, String keyPrefix, boolean automationEnabled, List<BoardColumn> columns) {
+    private Board(UUID workspaceId, String keyPrefix, boolean automationEnabled, boolean consolidateStories, List<BoardColumn> columns) {
         this.workspaceId = workspaceId;
         this.keyPrefix = keyPrefix;
         this.automationEnabled = automationEnabled;
+        this.consolidateStories = consolidateStories;
         this.columns = new ArrayList<>(columns);
         this.columns.sort(Comparator.comparingInt(BoardColumn::getPosition));
     }
 
     public static Board of(UUID workspaceId, String keyPrefix, boolean automationEnabled, List<BoardColumn> columns) {
-        return new Board(workspaceId, keyPrefix, automationEnabled, columns);
+        return new Board(workspaceId, keyPrefix, automationEnabled, false, columns);
+    }
+
+    public static Board of(UUID workspaceId,
+                           String keyPrefix,
+                           boolean automationEnabled,
+                           boolean consolidateStories,
+                           List<BoardColumn> columns) {
+        return new Board(workspaceId, keyPrefix, automationEnabled, consolidateStories, columns);
     }
 
     public static Board withDefaults(UUID workspaceId, String keyPrefix) {
-        return new Board(workspaceId, keyPrefix, false, List.of(
+        return new Board(workspaceId, keyPrefix, false, false, List.of(
                 BoardColumn.create(workspaceId, "To Do", ColumnKind.TODO, 0),
                 BoardColumn.create(workspaceId, "In Progress", ColumnKind.IN_PROGRESS, 1),
                 BoardColumn.create(workspaceId, "In Review", ColumnKind.IN_REVIEW, 2),
@@ -47,6 +57,10 @@ public final class Board {
 
     public void setAutomationEnabled(boolean automationEnabled) {
         this.automationEnabled = automationEnabled;
+    }
+
+    public void setConsolidateStories(boolean consolidateStories) {
+        this.consolidateStories = consolidateStories;
     }
 
     public BoardColumn addColumn(String name) {
@@ -123,6 +137,10 @@ public final class Board {
 
     public String getKeyPrefix() {
         return keyPrefix;
+    }
+
+    public boolean isConsolidateStories() {
+        return consolidateStories;
     }
 
     public boolean isAutomationEnabled() {

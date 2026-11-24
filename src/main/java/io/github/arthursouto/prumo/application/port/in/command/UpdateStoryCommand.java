@@ -13,7 +13,6 @@ public record UpdateStoryCommand(
         StoryPriority priority,
         Integer storyPoints,
         List<String> labels,
-        List<ChecklistInput> subtasks,
         List<ChecklistInput> acceptanceCriteria
 ) {
 }

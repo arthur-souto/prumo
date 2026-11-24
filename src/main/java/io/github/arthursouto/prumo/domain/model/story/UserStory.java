@@ -18,10 +18,9 @@ public final class UserStory {
     private UUID columnId;
     private String rank;
     private List<String> labels;
-    private List<ChecklistItem> subtasks;
     private List<ChecklistItem> acceptanceCriteria;
     private UUID repositoryId;
-    private String branchName;
+    private UUID assigneeId;
     private final List<PullRequest> pullRequests;
     private final Instant createdAt;
     private Instant updatedAt;
@@ -37,10 +36,8 @@ public final class UserStory {
                       UUID columnId,
                       String rank,
                       List<String> labels,
-                      List<ChecklistItem> subtasks,
                       List<ChecklistItem> acceptanceCriteria,
                       UUID repositoryId,
-                      String branchName,
                       List<PullRequest> pullRequests,
                       Instant createdAt,
                       Instant updatedAt) {
@@ -55,10 +52,8 @@ public final class UserStory {
         this.columnId = columnId;
         this.rank = rank;
         this.labels = List.copyOf(labels);
-        this.subtasks = List.copyOf(subtasks);
         this.acceptanceCriteria = List.copyOf(acceptanceCriteria);
         this.repositoryId = repositoryId;
-        this.branchName = branchName;
         this.pullRequests = List.copyOf(pullRequests);
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -74,8 +69,7 @@ public final class UserStory {
                                    UUID columnId,
                                    String rank,
                                    List<String> labels,
-                                   List<ChecklistItem> subtasks,
-                                   List<ChecklistItem> acceptanceCriteria) {
+                                                List<ChecklistItem> acceptanceCriteria) {
         Instant now = Instant.now();
 
         return new UserStory(
@@ -90,9 +84,7 @@ public final class UserStory {
                 columnId,
                 rank,
                 labels,
-                subtasks,
                 acceptanceCriteria,
-                null,
                 null,
                 List.of(),
                 now,
@@ -111,11 +103,9 @@ public final class UserStory {
                                     UUID columnId,
                                     String rank,
                                     List<String> labels,
-                                    List<ChecklistItem> subtasks,
-                                    List<ChecklistItem> acceptanceCriteria,
+                                                  List<ChecklistItem> acceptanceCriteria,
                                     UUID repositoryId,
-                                    String branchName,
-                                    List<PullRequest> pullRequests,
+                                                  List<PullRequest> pullRequests,
                                     Instant createdAt,
                                     Instant updatedAt) {
         return new UserStory(
@@ -130,10 +120,8 @@ public final class UserStory {
                 columnId,
                 rank,
                 labels,
-                subtasks,
                 acceptanceCriteria,
                 repositoryId,
-                branchName,
                 pullRequests,
                 createdAt,
                 updatedAt
@@ -145,14 +133,12 @@ public final class UserStory {
                        StoryPriority priority,
                        Integer storyPoints,
                        List<String> labels,
-                       List<ChecklistItem> subtasks,
-                       List<ChecklistItem> acceptanceCriteria) {
+                        List<ChecklistItem> acceptanceCriteria) {
         this.title = title;
         this.description = description;
         this.priority = priority;
         this.storyPoints = storyPoints;
         this.labels = List.copyOf(labels);
-        this.subtasks = List.copyOf(subtasks);
         this.acceptanceCriteria = List.copyOf(acceptanceCriteria);
         touch();
     }
@@ -164,39 +150,24 @@ public final class UserStory {
     }
 
     public boolean setChecklistItemDone(UUID itemId, boolean done) {
-        List<ChecklistItem> updatedSubtasks = replace(subtasks, itemId, done);
+        List<ChecklistItem> updated = replace(acceptanceCriteria, itemId, done);
 
-        if (updatedSubtasks != null) {
-            this.subtasks = updatedSubtasks;
-            touch();
-            return true;
+        if (updated == null) {
+            return false;
         }
 
-        List<ChecklistItem> updatedCriteria = replace(acceptanceCriteria, itemId, done);
-
-        if (updatedCriteria != null) {
-            this.acceptanceCriteria = updatedCriteria;
-            touch();
-            return true;
-        }
-
-        return false;
+        this.acceptanceCriteria = updated;
+        touch();
+        return true;
     }
 
     public void linkRepository(UUID repositoryId) {
         this.repositoryId = repositoryId;
-        this.branchName = null;
         touch();
     }
 
     public void unlinkRepository() {
         this.repositoryId = null;
-        this.branchName = null;
-        touch();
-    }
-
-    public void recordBranch(String branchName) {
-        this.branchName = branchName;
         touch();
     }
 
@@ -208,6 +179,21 @@ public final class UserStory {
         List<ChecklistItem> result = new ArrayList<>();
         items.forEach(item -> result.add(item.id().equals(itemId) ? item.withDone(done) : item));
         return List.copyOf(result);
+    }
+
+    public void assignTo(UUID assigneeId) {
+        this.assigneeId = assigneeId;
+        touch();
+    }
+
+    /** Used when rebuilding the story from storage, without touching updatedAt. */
+    public UserStory withAssignee(UUID assigneeId) {
+        this.assigneeId = assigneeId;
+        return this;
+    }
+
+    public UUID getAssigneeId() {
+        return assigneeId;
     }
 
     private void touch() {
@@ -258,20 +244,12 @@ public final class UserStory {
         return labels;
     }
 
-    public List<ChecklistItem> getSubtasks() {
-        return subtasks;
-    }
-
     public List<ChecklistItem> getAcceptanceCriteria() {
         return acceptanceCriteria;
     }
 
     public UUID getRepositoryId() {
         return repositoryId;
-    }
-
-    public String getBranchName() {
-        return branchName;
     }
 
     public List<PullRequest> getPullRequests() {

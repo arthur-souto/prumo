@@ -6,6 +6,7 @@ import java.util.UUID;
 public record PullRequest(
         UUID id,
         UUID storyId,
+        UUID subtaskId,
         UUID repositoryId,
         int number,
         String title,
@@ -23,7 +24,11 @@ public record PullRequest(
                                     String url,
                                     String branch,
                                     Instant updatedAt) {
-        return new PullRequest(UUID.randomUUID(), storyId, repositoryId, number, title, state, url, branch, updatedAt);
+        return new PullRequest(UUID.randomUUID(), storyId, null, repositoryId, number, title, state, url, branch, updatedAt);
+    }
+
+    public PullRequest forSubtask(UUID subtaskId) {
+        return new PullRequest(id, storyId, subtaskId, repositoryId, number, title, state, url, branch, updatedAt);
     }
 
     public PullRequest refreshed(UUID storyId,
@@ -32,6 +37,6 @@ public record PullRequest(
                                  String url,
                                  String branch,
                                  Instant updatedAt) {
-        return new PullRequest(id, storyId, repositoryId, number, title, state, url, branch, updatedAt);
+        return new PullRequest(id, storyId, subtaskId, repositoryId, number, title, state, url, branch, updatedAt);
     }
 }

@@ -62,7 +62,8 @@ public class BoardController implements BoardApi {
                 userId(authentication),
                 workspaceId,
                 request.keyPrefix(),
-                request.automationEnabled()
+                request.automationEnabled(),
+                request.consolidateStories()
         ));
 
         return full(authentication, workspaceId);
@@ -116,7 +117,7 @@ public class BoardController implements BoardApi {
     private BoardResponse full(Authentication authentication, UUID workspaceId) {
         BoardView view = getBoard.execute(new GetBoardQuery(userId(authentication), workspaceId));
 
-        return BoardResponse.from(view.board(), view.stories());
+        return BoardResponse.from(view.board(), view.stories(), view.subtaskProgress());
     }
 
     private static UUID userId(Authentication authentication) {

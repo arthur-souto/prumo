@@ -1,6 +1,5 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web.controller;
 
-import io.github.arthursouto.prumo.application.port.in.CreateStoryBranchUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateStoryRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.DeleteStoryUseCase;
@@ -9,17 +8,14 @@ import io.github.arthursouto.prumo.application.port.in.LinkStoryRepositoryUseCas
 import io.github.arthursouto.prumo.application.port.in.ListStoriesUseCase;
 import io.github.arthursouto.prumo.application.port.in.MoveStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.SetChecklistItemDoneUseCase;
-import io.github.arthursouto.prumo.application.port.in.SuggestBranchNameUseCase;
 import io.github.arthursouto.prumo.application.port.in.UpdateStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.command.ChecklistInput;
-import io.github.arthursouto.prumo.application.port.in.command.CreateStoryBranchCommand;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.DeleteStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.ListStoriesQuery;
 import io.github.arthursouto.prumo.application.port.in.command.MoveStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SetChecklistItemDoneCommand;
-import io.github.arthursouto.prumo.application.port.in.command.SuggestBranchNameQuery;
 import io.github.arthursouto.prumo.application.port.in.command.LinkStoryRepositoryCommand;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
 import io.github.arthursouto.prumo.domain.exceptions.ResourceNotFoundException;
@@ -86,13 +82,10 @@ class StoryControllerTest {
     private LinkStoryRepositoryUseCase linkRepository;
 
     @Mock
-    private SuggestBranchNameUseCase suggestBranch;
-
-    @Mock
-    private CreateStoryBranchUseCase createBranch;
-
-    @Mock
     private CreateStoryRepositoryUseCase createRepository;
+
+    @Mock
+    private io.github.arthursouto.prumo.application.port.in.AssignStoryUseCase assignStory;
 
     private MockMvc mockMvc;
     private final UUID userId = UUID.randomUUID();
@@ -113,9 +106,8 @@ class StoryControllerTest {
                         setChecklistItemDone,
                         moveStory,
                         linkRepository,
-                        suggestBranch,
-                        createBranch,
-                        createRepository
+                        createRepository,
+                        assignStory
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -130,9 +122,23 @@ class StoryControllerTest {
                 columnId,
                 "V",
                 List.of("api"),
-                List.of(ChecklistItem.create("code", false)),
                 List.of(ChecklistItem.create("works", true))
         );
+    }
+
+    @Test
+    void assignReturnsTheStoryWithItsAssignee() throws Exception {
+        UUID assignee = UUID.randomUUID();
+        story.assignTo(assignee);
+        when(assignStory.execute(new io.github.arthursouto.prumo.application.port.in.command.AssignStoryCommand(
+                userId, workspaceId, "PRU-12", assignee))).thenReturn(story);
+
+        mockMvc.perform(put(base + "/PRU-12/assignee")
+                        .principal(principal())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assigneeId\":\"" + assignee + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assigneeId").value(assignee.toString()));
     }
 
     private UsernamePasswordAuthenticationToken principal() {
@@ -148,13 +154,13 @@ class StoryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"Reset password","priority":"HIGH","storyPoints":5,"labels":["api"],
-                                 "subtasks":[{"text":"code"}],"acceptanceCriteria":[{"text":"works","done":true}]}
+                                 "acceptanceCriteria":[{"text":"works","done":true}]}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "http://localhost" + base + "/PRU-12"))
                 .andExpect(jsonPath("$.key").value("PRU-12"))
                 .andExpect(jsonPath("$.priority").value("HIGH"))
-                .andExpect(jsonPath("$.subtasks[0].text").value("code"))
+                .andExpect(jsonPath("$.subtasks").doesNotExist())
                 .andExpect(jsonPath("$.acceptanceCriteria[0].done").value(true))
                 .andExpect(jsonPath("$.pullRequests.length()").value(0))
                 .andExpect(jsonPath("$.rank").doesNotExist());
@@ -163,7 +169,6 @@ class StoryControllerTest {
         verify(createStory).execute(command.capture());
         assertThat(command.getValue().userId()).isEqualTo(userId);
         assertThat(command.getValue().workspaceId()).isEqualTo(workspaceId);
-        assertThat(command.getValue().subtasks()).containsExactly(new ChecklistInput(null, "code", false));
         assertThat(command.getValue().acceptanceCriteria()).containsExactly(new ChecklistInput(null, "works", true));
     }
 
@@ -173,7 +178,7 @@ class StoryControllerTest {
                         .principal(principal())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":" ","storyPoints":-1,"labels":["%s"],"subtasks":[{"text":""}]}
+                                {"title":" ","storyPoints":-1,"labels":["%s"],"acceptanceCriteria":[{"text":""}]}
                                 """.formatted("x".repeat(41))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.length()").value(4));
@@ -217,7 +222,7 @@ class StoryControllerTest {
                         .principal(principal())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"New","priority":"LOW","subtasks":[{"id":"%s","text":"a","done":true}]}
+                                {"title":"New","priority":"LOW","acceptanceCriteria":[{"id":"%s","text":"a","done":true}]}
                                 """.formatted(itemId)))
                 .andExpect(status().isOk());
 
@@ -225,8 +230,7 @@ class StoryControllerTest {
                 ArgumentCaptor.forClass(io.github.arthursouto.prumo.application.port.in.command.UpdateStoryCommand.class);
         verify(updateStory).execute(command.capture());
         assertThat(command.getValue().key()).isEqualTo("PRU-12");
-        assertThat(command.getValue().subtasks()).containsExactly(new ChecklistInput(itemId, "a", true));
-        assertThat(command.getValue().acceptanceCriteria()).isEmpty();
+        assertThat(command.getValue().acceptanceCriteria()).containsExactly(new ChecklistInput(itemId, "a", true));
     }
 
     @Test
@@ -299,39 +303,6 @@ class StoryControllerTest {
     }
 
     @Test
-    void suggestsABranchName() throws Exception {
-        when(suggestBranch.execute(new SuggestBranchNameQuery(userId, workspaceId, "PRU-12")))
-                .thenReturn("feature/PRU-12-reset-password");
-
-        mockMvc.perform(get(base + "/PRU-12/branch-suggestion").principal(principal()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("feature/PRU-12-reset-password"));
-    }
-
-    @Test
-    void branchNamesAreValidated() throws Exception {
-        for (String bad : new String[] {"", "-x", "a b", "x;rm -rf", "a..b/", "name/"}) {
-            mockMvc.perform(post(base + "/PRU-12/branch")
-                            .principal(principal()).contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"name\":\"" + bad + "\"}"))
-                    .andExpect(status().isBadRequest());
-        }
-
-        verifyNoInteractions(createBranch);
-    }
-
-    @Test
-    void createsABranchAndReturnsTheStoryWithTheBranch() throws Exception {
-        when(createBranch.execute(new CreateStoryBranchCommand(userId, workspaceId, "PRU-12", "feature/PRU-12-x")))
-                .thenReturn(story);
-
-        mockMvc.perform(post(base + "/PRU-12/branch")
-                        .principal(principal()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"feature/PRU-12-x\"}"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
     void createsARepositoryForTheStory() throws Exception {
         when(createRepository.execute(new CreateStoryRepositoryCommand(userId, workspaceId, "PRU-12", "pru-12", null, true)))
                 .thenReturn(story);
@@ -350,7 +321,7 @@ class StoryControllerTest {
     void pullRequestsAreExposedWithoutInternalIds() throws Exception {
         UserStory withPr = UserStory.restore(
                 story.getId(), workspaceId, 12, "PRU-12", "T", null, StoryPriority.LOW, null, columnId, "V",
-                List.of(), List.of(), List.of(), UUID.randomUUID(), "feature/x",
+                List.of(), List.of(), UUID.randomUUID(),
                 List.of(PullRequest.track(story.getId(), UUID.randomUUID(), 7, "PR", PullRequestState.MERGED,
                         "https://github.com/a/b/pull/7", "feature/x", Instant.now())),
                 Instant.now(), Instant.now()
@@ -362,6 +333,6 @@ class StoryControllerTest {
                 .andExpect(jsonPath("$.pullRequests[0].number").value(7))
                 .andExpect(jsonPath("$.pullRequests[0].state").value("MERGED"))
                 .andExpect(jsonPath("$.pullRequests[0].id").doesNotExist())
-                .andExpect(jsonPath("$.branchName").value("feature/x"));
+                .andExpect(jsonPath("$.pullRequests[0].subtaskId").doesNotExist());
     }
 }

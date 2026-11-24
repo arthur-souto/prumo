@@ -29,4 +29,7 @@ public class BoardEntity {
 
     @Column(name = "automation_enabled", nullable = false)
     private boolean automationEnabled;
+
+    @Column(name = "consolidate_stories", nullable = false)
+    private boolean consolidateStories;
 }

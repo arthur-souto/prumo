@@ -92,7 +92,7 @@ class BoardControllerTest {
     void getReturnsTheColumnsInOrderWithTheirStories() throws Exception {
         UserStory story = UserStory.create(
                 workspaceId, 1, "PRU-1", "T", null, StoryPriority.LOW, null, board.first().getId(), "V",
-                List.of(), List.of(), List.of()
+                List.of(), List.of()
         );
         when(getBoard.execute(new GetBoardQuery(userId, workspaceId))).thenReturn(new BoardView(board, List.of(story)));
 

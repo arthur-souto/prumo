@@ -1,9 +1,9 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web.api;
 
 import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
-import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateBranchRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStoryRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStoryRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.AssignStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.LinkRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.MoveStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SetChecklistDoneRequest;
@@ -125,25 +125,13 @@ public interface StoryApi {
             @RequestBody LinkRepositoryRequest request
     );
 
-    @Operation(summary = "Suggest a branch name", security = @SecurityRequirement(name = "bearerAuth"))
-    @GetMapping("/{key}/branch-suggestion")
-    Map<String, String> suggestBranch(
-            @Parameter(hidden = true) Authentication authentication,
-            @PathVariable UUID workspaceId,
-            @PathVariable String key
-    );
-
-    @Operation(
-            summary = "Create a branch in the linked repository",
-            description = "GitHub failures come back with a code property: INVALID_TOKEN, RATE_LIMITED, NOT_FOUND and so on.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PostMapping("/{key}/branch")
-    StoryResponse createBranch(
+    @Operation(summary = "Assign the story to a member, or unassign it", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("/{key}/assignee")
+    StoryResponse assign(
             @Parameter(hidden = true) Authentication authentication,
             @PathVariable UUID workspaceId,
             @PathVariable String key,
-            @Valid @RequestBody CreateBranchRequest request
+            @RequestBody AssignStoryRequest request
     );
 
     @Operation(

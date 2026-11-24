@@ -13,6 +13,8 @@ public interface StoryRepositoryPort {
 
     List<UserStory> saveAll(List<UserStory> stories);
 
+    Optional<UserStory> findById(UUID id);
+
     Optional<UserStory> findByWorkspaceIdAndKey(UUID workspaceId, String key);
 
     List<UserStory> findAllByWorkspaceId(UUID workspaceId);

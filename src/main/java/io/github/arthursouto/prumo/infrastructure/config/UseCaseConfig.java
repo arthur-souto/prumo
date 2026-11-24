@@ -45,14 +45,15 @@ import io.github.arthursouto.prumo.application.usecase.RevokeRefreshTokenService
 import io.github.arthursouto.prumo.application.usecase.StartOAuthLoginService;
 import io.github.arthursouto.prumo.application.port.in.ConnectRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateColumnUseCase;
-import io.github.arthursouto.prumo.application.port.in.CreateStoryBranchUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateStoryRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.DeleteColumnUseCase;
 import io.github.arthursouto.prumo.application.port.in.DeleteStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.DisconnectRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetBoardUseCase;
+import io.github.arthursouto.prumo.application.port.in.AssignStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetGithubConnectionUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListWorkspaceMembersUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.LinkStoryRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.ListAccessibleRepositoriesUseCase;
@@ -64,7 +65,6 @@ import io.github.arthursouto.prumo.application.port.in.RenameColumnUseCase;
 import io.github.arthursouto.prumo.application.port.in.ReorderColumnsUseCase;
 import io.github.arthursouto.prumo.application.port.in.SaveGithubTokenUseCase;
 import io.github.arthursouto.prumo.application.port.in.SetChecklistItemDoneUseCase;
-import io.github.arthursouto.prumo.application.port.in.SuggestBranchNameUseCase;
 import io.github.arthursouto.prumo.application.port.in.SyncAllPullRequestsUseCase;
 import io.github.arthursouto.prumo.application.port.in.SyncWorkspacePullRequestsUseCase;
 import io.github.arthursouto.prumo.application.port.in.UpdateBoardSettingsUseCase;
@@ -74,11 +74,11 @@ import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.SubtaskRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.TokenCipherPort;
 import io.github.arthursouto.prumo.application.usecase.BoardProvisioner;
 import io.github.arthursouto.prumo.application.usecase.ConnectRepositoryService;
 import io.github.arthursouto.prumo.application.usecase.CreateColumnService;
-import io.github.arthursouto.prumo.application.usecase.CreateStoryBranchService;
 import io.github.arthursouto.prumo.application.usecase.CreateStoryRepositoryService;
 import io.github.arthursouto.prumo.application.usecase.CreateStoryService;
 import io.github.arthursouto.prumo.application.usecase.DeleteColumnService;
@@ -86,7 +86,9 @@ import io.github.arthursouto.prumo.application.usecase.DeleteStoryService;
 import io.github.arthursouto.prumo.application.usecase.DisconnectRepositoryService;
 import io.github.arthursouto.prumo.application.usecase.GetBoardService;
 import io.github.arthursouto.prumo.application.usecase.GetGithubConnectionService;
+import io.github.arthursouto.prumo.application.usecase.AssignStoryService;
 import io.github.arthursouto.prumo.application.usecase.GetStoryService;
+import io.github.arthursouto.prumo.application.usecase.ListWorkspaceMembersService;
 import io.github.arthursouto.prumo.application.usecase.GithubTokens;
 import io.github.arthursouto.prumo.application.usecase.LinkStoryRepositoryService;
 import io.github.arthursouto.prumo.application.usecase.ListAccessibleRepositoriesService;
@@ -101,12 +103,29 @@ import io.github.arthursouto.prumo.application.usecase.RepositoryConnector;
 import io.github.arthursouto.prumo.application.usecase.SaveGithubTokenService;
 import io.github.arthursouto.prumo.application.usecase.SetChecklistItemDoneService;
 import io.github.arthursouto.prumo.application.usecase.StoryLookup;
-import io.github.arthursouto.prumo.application.usecase.SuggestBranchNameService;
 import io.github.arthursouto.prumo.application.usecase.SyncAllPullRequestsService;
 import io.github.arthursouto.prumo.application.usecase.SyncWorkspacePullRequestsService;
 import io.github.arthursouto.prumo.application.usecase.UpdateBoardSettingsService;
 import io.github.arthursouto.prumo.application.usecase.UpdateStoryService;
 import io.github.arthursouto.prumo.application.usecase.WorkspaceAccess;
+import io.github.arthursouto.prumo.application.port.in.CreateSubtaskUseCase;
+import io.github.arthursouto.prumo.application.port.in.ListSubtasksUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetSubtaskUseCase;
+import io.github.arthursouto.prumo.application.port.in.UpdateSubtaskUseCase;
+import io.github.arthursouto.prumo.application.port.in.ChangeSubtaskStatusUseCase;
+import io.github.arthursouto.prumo.application.port.in.DeleteSubtaskUseCase;
+import io.github.arthursouto.prumo.application.port.in.SuggestSubtaskBranchUseCase;
+import io.github.arthursouto.prumo.application.port.in.CreateSubtaskBranchUseCase;
+import io.github.arthursouto.prumo.application.usecase.CreateSubtaskService;
+import io.github.arthursouto.prumo.application.usecase.ListSubtasksService;
+import io.github.arthursouto.prumo.application.usecase.GetSubtaskService;
+import io.github.arthursouto.prumo.application.usecase.UpdateSubtaskService;
+import io.github.arthursouto.prumo.application.usecase.ChangeSubtaskStatusService;
+import io.github.arthursouto.prumo.application.usecase.DeleteSubtaskService;
+import io.github.arthursouto.prumo.application.usecase.SuggestSubtaskBranchService;
+import io.github.arthursouto.prumo.application.usecase.CreateSubtaskBranchService;
+import io.github.arthursouto.prumo.application.usecase.SubtaskLookup;
+import io.github.arthursouto.prumo.application.usecase.SubtaskWorkflow;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -282,6 +301,8 @@ public class UseCaseConfig {
             TokenCipherPort cipher,
             GithubPort github,
             StoryRepositoryPort storyRepository,
+            SubtaskRepositoryPort subtaskRepository,
+            SubtaskWorkflow workflow,
             BoardRepositoryPort boardRepository,
             ConnectedRepositoryPort repositoryPort,
             Clock clock
@@ -291,6 +312,8 @@ public class UseCaseConfig {
                 cipher,
                 github,
                 storyRepository,
+                subtaskRepository,
+                workflow,
                 boardRepository,
                 repositoryPort,
                 clock
@@ -301,9 +324,10 @@ public class UseCaseConfig {
     GetBoardUseCase getBoardUseCase(
             WorkspaceAccess access,
             BoardProvisioner boards,
-            StoryRepositoryPort storyRepository
+            StoryRepositoryPort storyRepository,
+            SubtaskRepositoryPort subtaskRepository
     ) {
-        return new GetBoardService(access, boards, storyRepository);
+        return new GetBoardService(access, boards, storyRepository, subtaskRepository);
     }
 
     @Bean
@@ -471,27 +495,7 @@ public class UseCaseConfig {
         return new LinkStoryRepositoryService(stories, storyRepository, repositoryPort);
     }
 
-    @Bean
-    SuggestBranchNameUseCase suggestBranchNameUseCase(StoryLookup stories) {
-        return new SuggestBranchNameService(stories);
-    }
 
-    @Bean
-    CreateStoryBranchUseCase createStoryBranchUseCase(
-            StoryLookup stories,
-            StoryRepositoryPort storyRepository,
-            ConnectedRepositoryPort repositoryPort,
-            GithubTokens tokens,
-            GithubPort github
-    ) {
-        return new CreateStoryBranchService(
-                stories,
-                storyRepository,
-                repositoryPort,
-                tokens,
-                github
-        );
-    }
 
     @Bean
     CreateStoryRepositoryUseCase createStoryRepositoryUseCase(
@@ -519,5 +523,80 @@ public class UseCaseConfig {
             PullRequestSyncer syncer
     ) {
         return new SyncAllPullRequestsService(repositoryPort, syncer);
+    }
+
+    @Bean
+    AssignStoryUseCase assignStoryUseCase(StoryLookup stories, WorkspaceAccess access, StoryRepositoryPort storyRepository) {
+        return new AssignStoryService(stories, access, storyRepository);
+    }
+
+    @Bean
+    ListWorkspaceMembersUseCase listWorkspaceMembersUseCase(WorkspaceAccess access, UserRepositoryPort userRepository) {
+        return new ListWorkspaceMembersService(access, userRepository);
+    }
+
+    @Bean
+    SubtaskLookup subtaskLookup(WorkspaceAccess access, SubtaskRepositoryPort subtaskRepository, StoryRepositoryPort storyRepository) {
+        return new SubtaskLookup(access, subtaskRepository, storyRepository);
+    }
+
+    @Bean
+    SubtaskWorkflow subtaskWorkflow(SubtaskRepositoryPort subtaskRepository, StoryRepositoryPort storyRepository) {
+        return new SubtaskWorkflow(subtaskRepository, storyRepository);
+    }
+
+    @Bean
+    CreateSubtaskUseCase createSubtaskUseCase(
+            StoryLookup stories,
+            SubtaskLookup lookup,
+            BoardProvisioner boards,
+            BoardRepositoryPort boardRepository,
+            SubtaskRepositoryPort subtaskRepository,
+            ConnectedRepositoryPort repositoryPort,
+            GithubTokens tokens,
+            GithubPort github
+    ) {
+        return new CreateSubtaskService(stories, lookup, boards, boardRepository, subtaskRepository, repositoryPort, tokens, github);
+    }
+
+    @Bean
+    ListSubtasksUseCase listSubtasksUseCase(StoryLookup stories, SubtaskLookup lookup, SubtaskRepositoryPort subtaskRepository) {
+        return new ListSubtasksService(stories, lookup, subtaskRepository);
+    }
+
+    @Bean
+    GetSubtaskUseCase getSubtaskUseCase(SubtaskLookup lookup) {
+        return new GetSubtaskService(lookup);
+    }
+
+    @Bean
+    UpdateSubtaskUseCase updateSubtaskUseCase(SubtaskLookup lookup, SubtaskRepositoryPort subtaskRepository) {
+        return new UpdateSubtaskService(lookup, subtaskRepository);
+    }
+
+    @Bean
+    ChangeSubtaskStatusUseCase changeSubtaskStatusUseCase(SubtaskLookup lookup, BoardProvisioner boards, SubtaskWorkflow workflow) {
+        return new ChangeSubtaskStatusService(lookup, boards, workflow);
+    }
+
+    @Bean
+    DeleteSubtaskUseCase deleteSubtaskUseCase(SubtaskLookup lookup, SubtaskRepositoryPort subtaskRepository) {
+        return new DeleteSubtaskService(lookup, subtaskRepository);
+    }
+
+    @Bean
+    SuggestSubtaskBranchUseCase suggestSubtaskBranchUseCase(SubtaskLookup lookup) {
+        return new SuggestSubtaskBranchService(lookup);
+    }
+
+    @Bean
+    CreateSubtaskBranchUseCase createSubtaskBranchUseCase(
+            SubtaskLookup lookup,
+            SubtaskRepositoryPort subtaskRepository,
+            ConnectedRepositoryPort repositoryPort,
+            GithubTokens tokens,
+            GithubPort github
+    ) {
+        return new CreateSubtaskBranchService(lookup, subtaskRepository, repositoryPort, tokens, github);
     }
 }

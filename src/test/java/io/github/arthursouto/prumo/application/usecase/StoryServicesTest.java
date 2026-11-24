@@ -72,8 +72,7 @@ class StoryServicesTest {
                 null,
                 3,
                 List.of("api", "API", " ", "backend"),
-                List.of(new ChecklistInput(null, " write ", false), new ChecklistInput(null, "  ", false)),
-                List.of(new ChecklistInput(null, "works", true)),
+                List.of(new ChecklistInput(null, "works", true), new ChecklistInput(null, "  ", false)),
                 columnId
         );
     }
@@ -103,7 +102,7 @@ class StoryServicesTest {
         assertThat(created.getColumnId()).isEqualTo(BoardFixtures.column(board, ColumnKind.TODO).getId());
         assertThat(created.getRank()).isGreaterThan("V");
         assertThat(created.getLabels()).containsExactly("api", "backend");
-        assertThat(created.getSubtasks()).extracting(ChecklistItem::text).containsExactly("write");
+        assertThat(created.getAcceptanceCriteria()).extracting(ChecklistItem::text).containsExactly("works");
         assertThat(created.getAcceptanceCriteria()).extracting(ChecklistItem::done).containsExactly(true);
     }
 
@@ -137,7 +136,7 @@ class StoryServicesTest {
     void strangersCannotCreateAndConsumeNoNumber() {
         when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
         CreateStoryCommand command = new CreateStoryCommand(
-                UUID.randomUUID(), workspace.getId(), "X", null, null, null, null, null, null, null
+                UUID.randomUUID(), workspace.getId(), "X", null, null, null, null, null, null
         );
 
         assertThatThrownBy(() -> new CreateStoryService(access, provisioner, boardRepository, storyRepository)
@@ -152,8 +151,8 @@ class StoryServicesTest {
         asMember();
         UserStory a = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
         UserStory b = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 2, "b");
-        a.update("Login page", "about oauth", StoryPriority.HIGH, null, List.of("Frontend"), List.of(), List.of());
-        b.update("Reset password", null, StoryPriority.LOW, null, List.of("backend"), List.of(), List.of());
+        a.update("Login page", "about oauth", StoryPriority.HIGH, null, List.of("Frontend"), List.of());
+        b.update("Reset password", null, StoryPriority.LOW, null, List.of("backend"), List.of());
         when(storyRepository.findAllByWorkspaceId(workspace.getId())).thenReturn(List.of(a, b));
         ListStoriesService service = new ListStoriesService(access, storyRepository);
 
@@ -190,7 +189,7 @@ class StoryServicesTest {
         UserStory story = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
         ChecklistItem kept = ChecklistItem.create("keep", false);
         ChecklistItem removed = ChecklistItem.create("remove", false);
-        story.update("T", null, StoryPriority.LOW, null, List.of(), List.of(kept, removed), List.of());
+        story.update("T", null, StoryPriority.LOW, null, List.of(), List.of(kept, removed));
         when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
         when(storyRepository.save(story)).thenReturn(story);
 
@@ -203,17 +202,15 @@ class StoryServicesTest {
                 StoryPriority.URGENT,
                 8,
                 List.of("x"),
-                List.of(new ChecklistInput(kept.id(), "keep edited", true), new ChecklistInput(UUID.randomUUID(), "new", false)),
-                null
+                List.of(new ChecklistInput(kept.id(), "keep edited", true), new ChecklistInput(UUID.randomUUID(), "new", false))
         ));
 
         assertThat(story.getTitle()).isEqualTo("New title");
         assertThat(story.getDescription()).isNull();
         assertThat(story.getPriority()).isEqualTo(StoryPriority.URGENT);
-        assertThat(story.getSubtasks()).hasSize(2);
-        assertThat(story.getSubtasks().get(0)).isEqualTo(new ChecklistItem(kept.id(), "keep edited", true));
-        assertThat(story.getSubtasks()).extracting(ChecklistItem::id).doesNotContain(removed.id());
-        assertThat(story.getAcceptanceCriteria()).isEmpty();
+        assertThat(story.getAcceptanceCriteria()).hasSize(2);
+        assertThat(story.getAcceptanceCriteria().get(0)).isEqualTo(new ChecklistItem(kept.id(), "keep edited", true));
+        assertThat(story.getAcceptanceCriteria()).extracting(ChecklistItem::id).doesNotContain(removed.id());
     }
 
     @Test
@@ -221,14 +218,14 @@ class StoryServicesTest {
         asMember();
         UserStory story = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
         ChecklistItem item = ChecklistItem.create("x", false);
-        story.update("T", null, StoryPriority.LOW, null, List.of(), List.of(item), List.of());
+        story.update("T", null, StoryPriority.LOW, null, List.of(), List.of(item));
         when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
         when(storyRepository.save(story)).thenReturn(story);
         SetChecklistItemDoneService service = new SetChecklistItemDoneService(lookup, storyRepository);
 
         service.execute(new SetChecklistItemDoneCommand(userId, workspace.getId(), "PRU-1", item.id(), true));
 
-        assertThat(story.getSubtasks().get(0).done()).isTrue();
+        assertThat(story.getAcceptanceCriteria().get(0).done()).isTrue();
         assertThatThrownBy(() -> service.execute(
                 new SetChecklistItemDoneCommand(userId, workspace.getId(), "PRU-1", UUID.randomUUID(), true)))
                 .isInstanceOf(ResourceNotFoundException.class);

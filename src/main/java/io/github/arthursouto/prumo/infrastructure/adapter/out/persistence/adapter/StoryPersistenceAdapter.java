@@ -72,6 +72,12 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<UserStory> findById(UUID id) {
+        return storyRepository.findById(id).map(entity -> hydrate(List.of(entity)).get(0));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<UserStory> findByWorkspaceIdAndKey(UUID workspaceId, String key) {
         return storyRepository.findByWorkspaceIdAndStoryKey(workspaceId, key)
                 .map(entity -> hydrate(List.of(entity)).get(0));

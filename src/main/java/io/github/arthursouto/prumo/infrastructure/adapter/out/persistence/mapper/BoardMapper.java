@@ -39,6 +39,7 @@ public final class BoardMapper {
                 entity.getWorkspaceId(),
                 entity.getKeyPrefix(),
                 entity.isAutomationEnabled(),
+                entity.isConsolidateStories(),
                 columns.stream().map(BoardMapper::toDomain).toList()
         );
     }

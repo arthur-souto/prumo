@@ -1,0 +1,2 @@
+ALTER TABLE boards
+    ADD COLUMN consolidate_stories BOOLEAN NOT NULL DEFAULT FALSE;

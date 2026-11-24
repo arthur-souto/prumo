@@ -11,6 +11,8 @@ import io.github.arthursouto.prumo.application.port.in.command.UpdateBoardSettin
 import io.github.arthursouto.prumo.application.port.in.result.BoardView;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.SubtaskRepositoryPort;
+import io.github.arthursouto.prumo.domain.model.story.SubtaskProgress;
 import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
 import io.github.arthursouto.prumo.domain.exceptions.ConflictException;
@@ -52,6 +54,9 @@ class BoardServicesTest {
 
     @Mock
     private StoryRepositoryPort storyRepository;
+
+    @Mock
+    private SubtaskRepositoryPort subtaskRepository;
 
     private final UUID ownerId = UUID.randomUUID();
     private final UUID memberId = UUID.randomUUID();
@@ -128,14 +133,28 @@ class BoardServicesTest {
     void getBoardReturnsColumnsAndStoriesForMembersOnly() {
         UserStory story = BoardFixtures.story(workspace, board.first(), 1, "V");
         when(storyRepository.findAllByWorkspaceId(workspace.getId())).thenReturn(List.of(story));
-        GetBoardService service = new GetBoardService(access, provisioner, storyRepository);
+        when(subtaskRepository.progressByStoryIds(List.of(story.getId())))
+                .thenReturn(java.util.Map.of(story.getId(), new SubtaskProgress(3, 1)));
+        GetBoardService service = new GetBoardService(access, provisioner, storyRepository, subtaskRepository);
 
         BoardView view = service.execute(new GetBoardQuery(memberId, workspace.getId()));
 
         assertThat(view.board()).isSameAs(board);
         assertThat(view.stories()).containsExactly(story);
+        assertThat(view.subtaskProgress().get(story.getId())).isEqualTo(new SubtaskProgress(3, 1));
         assertThatThrownBy(() -> service.execute(new GetBoardQuery(UUID.randomUUID(), workspace.getId())))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void ownersCanTurnStoryConsolidationOnAndOffAndOmittingItKeepsIt() {
+        when(boardRepository.save(any(Board.class))).thenAnswer(call -> call.getArgument(0));
+        UpdateBoardSettingsService service = new UpdateBoardSettingsService(access, provisioner, boardRepository, storyRepository);
+
+        assertThat(board.isConsolidateStories()).isFalse();
+        assertThat(service.execute(new UpdateBoardSettingsCommand(ownerId, workspace.getId(), null, null, true)).isConsolidateStories()).isTrue();
+        assertThat(service.execute(new UpdateBoardSettingsCommand(ownerId, workspace.getId(), null, true, null)).isConsolidateStories()).isTrue();
+        assertThat(service.execute(new UpdateBoardSettingsCommand(ownerId, workspace.getId(), null, null, false)).isConsolidateStories()).isFalse();
     }
 
     @Test

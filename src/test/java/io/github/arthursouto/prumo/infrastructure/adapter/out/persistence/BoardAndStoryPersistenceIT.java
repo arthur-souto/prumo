@@ -71,7 +71,7 @@ class BoardAndStoryPersistenceIT {
         return UserStory.create(
                 workspaceId, number, board.getKeyPrefix() + "-" + number, "Story " + number, null,
                 StoryPriority.MEDIUM, null, board.ofKind(kind).orElseThrow().getId(), rank,
-                List.of("api"), List.of(ChecklistItem.create("do", false)), List.of()
+                List.of("api"), List.of(ChecklistItem.create("do", false))
         );
     }
 
@@ -125,7 +125,7 @@ class BoardAndStoryPersistenceIT {
         UserStory loaded = stories.findByWorkspaceIdAndKey(workspaceId, "KEY-1").orElseThrow();
 
         assertThat(loaded.getLabels()).containsExactly("api");
-        assertThat(loaded.getSubtasks()).extracting(ChecklistItem::text).containsExactly("do");
+        assertThat(loaded.getAcceptanceCriteria()).extracting(ChecklistItem::text).containsExactly("do");
         assertThat(stories.findAllByWorkspaceIdAndKeys(workspaceId, List.of("KEY-1", "KEY-9"))).hasSize(1);
         assertThat(stories.countByWorkspaceId(workspaceId)).isEqualTo(1);
     }

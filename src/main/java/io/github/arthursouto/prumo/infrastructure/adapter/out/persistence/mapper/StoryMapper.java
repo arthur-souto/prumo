@@ -15,7 +15,6 @@ import java.util.UUID;
 
 public final class StoryMapper {
 
-    public static final String SUBTASK = "SUBTASK";
     public static final String CRITERION = "CRITERION";
 
     private StoryMapper() {
@@ -34,7 +33,7 @@ public final class StoryMapper {
         entity.setColumnId(story.getColumnId());
         entity.setSortRank(story.getRank());
         entity.setRepositoryId(story.getRepositoryId());
-        entity.setBranchName(story.getBranchName());
+        entity.setAssigneeId(story.getAssigneeId());
         entity.setCreatedAt(story.getCreatedAt());
         entity.setUpdatedAt(story.getUpdatedAt());
         return entity;
@@ -57,7 +56,6 @@ public final class StoryMapper {
 
     public static List<StoryChecklistItemEntity> itemEntities(UserStory story) {
         List<StoryChecklistItemEntity> entities = new ArrayList<>();
-        append(entities, story.getId(), SUBTASK, story.getSubtasks());
         append(entities, story.getId(), CRITERION, story.getAcceptanceCriteria());
         return entities;
     }
@@ -66,6 +64,7 @@ public final class StoryMapper {
         PullRequestEntity entity = new PullRequestEntity();
         entity.setId(pullRequest.id());
         entity.setStoryId(pullRequest.storyId());
+        entity.setSubtaskId(pullRequest.subtaskId());
         entity.setRepositoryId(pullRequest.repositoryId());
         entity.setNumber(pullRequest.number());
         entity.setTitle(pullRequest.title());
@@ -80,6 +79,7 @@ public final class StoryMapper {
         return new PullRequest(
                 entity.getId(),
                 entity.getStoryId(),
+                entity.getSubtaskId(),
                 entity.getRepositoryId(),
                 entity.getNumber(),
                 entity.getTitle(),
@@ -109,17 +109,15 @@ public final class StoryMapper {
                         .sorted(Comparator.comparingInt(StoryLabelEntity::getPosition))
                         .map(StoryLabelEntity::getLabel)
                         .toList(),
-                checklist(items, SUBTASK),
                 checklist(items, CRITERION),
                 entity.getRepositoryId(),
-                entity.getBranchName(),
                 pullRequests.stream()
                         .sorted(Comparator.comparing(PullRequestEntity::getUpdatedAt).reversed())
                         .map(StoryMapper::toDomain)
                         .toList(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
-        );
+        ).withAssignee(entity.getAssigneeId());
     }
 
     private static void append(List<StoryChecklistItemEntity> target, UUID storyId, String kind, List<ChecklistItem> items) {

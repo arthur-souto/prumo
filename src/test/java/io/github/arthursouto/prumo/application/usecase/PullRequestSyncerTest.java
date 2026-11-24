@@ -7,6 +7,7 @@ import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.SubtaskRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.TokenCipherPort;
 import io.github.arthursouto.prumo.application.port.out.result.PullRequestPage;
 import io.github.arthursouto.prumo.application.port.out.result.RemotePullRequest;
@@ -57,6 +58,9 @@ class PullRequestSyncerTest {
     private StoryRepositoryPort storyRepository;
 
     @Mock
+    private SubtaskRepositoryPort subtaskRepository;
+
+    @Mock
     private BoardRepositoryPort boardRepository;
 
     @Mock
@@ -81,6 +85,8 @@ class PullRequestSyncerTest {
                 cipher,
                 github,
                 storyRepository,
+                subtaskRepository,
+                new SubtaskWorkflow(subtaskRepository, storyRepository),
                 boardRepository,
                 repositoryPort,
                 Clock.fixed(now, ZoneOffset.UTC)
@@ -91,6 +97,7 @@ class PullRequestSyncerTest {
         lenient().when(boardRepository.findByWorkspaceId(workspace.getId())).thenReturn(Optional.of(board));
         lenient().when(storyRepository.findAllByWorkspaceIdAndKeys(eq(workspace.getId()), any()))
                 .thenReturn(List.of(story));
+        lenient().when(subtaskRepository.findAllByWorkspaceIdAndKeys(any(), any())).thenReturn(List.of());
         lenient().when(storyRepository.findAllByColumnId(any())).thenReturn(List.of());
         lenient().when(storyRepository.findPullRequest(any(), any(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(Optional.empty());

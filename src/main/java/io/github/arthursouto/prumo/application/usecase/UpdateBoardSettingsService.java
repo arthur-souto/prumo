@@ -42,6 +42,10 @@ public class UpdateBoardSettingsService implements UpdateBoardSettingsUseCase {
             board.setAutomationEnabled(command.automationEnabled());
         }
 
+        if (command.consolidateStories() != null) {
+            board.setConsolidateStories(command.consolidateStories());
+        }
+
         try {
             return boardRepository.save(board);
         } catch (KeyPrefixTakenException exception) {

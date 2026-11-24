@@ -53,7 +53,6 @@ public class CreateStoryService implements CreateStoryUseCase {
                 column.getId(),
                 Rank.between(lastRank, null),
                 Checklists.labels(command.labels()),
-                Checklists.items(command.subtasks(), List.of()),
                 Checklists.items(command.acceptanceCriteria(), List.of())
         ));
     }

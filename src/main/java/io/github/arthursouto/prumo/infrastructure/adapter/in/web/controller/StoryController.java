@@ -1,35 +1,33 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web.controller;
 
-import io.github.arthursouto.prumo.application.port.in.CreateStoryBranchUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateStoryRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.DeleteStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetStoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.AssignStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.LinkStoryRepositoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.ListStoriesUseCase;
 import io.github.arthursouto.prumo.application.port.in.MoveStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.SetChecklistItemDoneUseCase;
-import io.github.arthursouto.prumo.application.port.in.SuggestBranchNameUseCase;
 import io.github.arthursouto.prumo.application.port.in.UpdateStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.command.ChecklistInput;
-import io.github.arthursouto.prumo.application.port.in.command.CreateStoryBranchCommand;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.DeleteStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.GetStoryQuery;
+import io.github.arthursouto.prumo.application.port.in.command.AssignStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.LinkStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.ListStoriesQuery;
 import io.github.arthursouto.prumo.application.port.in.command.MoveStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SetChecklistItemDoneCommand;
-import io.github.arthursouto.prumo.application.port.in.command.SuggestBranchNameQuery;
 import io.github.arthursouto.prumo.application.port.in.command.UpdateStoryCommand;
 import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.api.StoryApi;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.ChecklistItemRequest;
-import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateBranchRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStoryRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStoryRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.AssignStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.LinkRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.MoveStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SetChecklistDoneRequest;
@@ -55,9 +53,8 @@ public class StoryController implements StoryApi {
     private final SetChecklistItemDoneUseCase setChecklistItemDone;
     private final MoveStoryUseCase moveStory;
     private final LinkStoryRepositoryUseCase linkRepository;
-    private final SuggestBranchNameUseCase suggestBranch;
-    private final CreateStoryBranchUseCase createBranch;
     private final CreateStoryRepositoryUseCase createRepository;
+    private final AssignStoryUseCase assignStory;
 
     public StoryController(CreateStoryUseCase createStory,
                            ListStoriesUseCase listStories,
@@ -67,9 +64,8 @@ public class StoryController implements StoryApi {
                            SetChecklistItemDoneUseCase setChecklistItemDone,
                            MoveStoryUseCase moveStory,
                            LinkStoryRepositoryUseCase linkRepository,
-                           SuggestBranchNameUseCase suggestBranch,
-                           CreateStoryBranchUseCase createBranch,
-                           CreateStoryRepositoryUseCase createRepository) {
+                           CreateStoryRepositoryUseCase createRepository,
+                           AssignStoryUseCase assignStory) {
         this.createStory = createStory;
         this.listStories = listStories;
         this.getStory = getStory;
@@ -78,9 +74,8 @@ public class StoryController implements StoryApi {
         this.setChecklistItemDone = setChecklistItemDone;
         this.moveStory = moveStory;
         this.linkRepository = linkRepository;
-        this.suggestBranch = suggestBranch;
-        this.createBranch = createBranch;
         this.createRepository = createRepository;
+        this.assignStory = assignStory;
     }
 
     @Override
@@ -95,7 +90,6 @@ public class StoryController implements StoryApi {
                 request.priority(),
                 request.storyPoints(),
                 request.labels(),
-                inputs(request.subtasks()),
                 inputs(request.acceptanceCriteria()),
                 request.columnId()
         ));
@@ -136,7 +130,6 @@ public class StoryController implements StoryApi {
                 request.priority(),
                 request.storyPoints(),
                 request.labels(),
-                inputs(request.subtasks()),
                 inputs(request.acceptanceCriteria())
         )));
     }
@@ -189,20 +182,12 @@ public class StoryController implements StoryApi {
     }
 
     @Override
-    public Map<String, String> suggestBranch(Authentication authentication, UUID workspaceId, String key) {
-        return Map.of("name", suggestBranch.execute(new SuggestBranchNameQuery(userId(authentication), workspaceId, key)));
-    }
-
-    @Override
-    public StoryResponse createBranch(Authentication authentication,
-                                      UUID workspaceId,
-                                      String key,
-                                      CreateBranchRequest request) {
-        return StoryResponse.from(createBranch.execute(new CreateStoryBranchCommand(
+    public StoryResponse assign(Authentication authentication, UUID workspaceId, String key, AssignStoryRequest request) {
+        return StoryResponse.from(assignStory.execute(new AssignStoryCommand(
                 userId(authentication),
                 workspaceId,
                 key,
-                request.name()
+                request.assigneeId()
         )));
     }
 

@@ -27,6 +27,9 @@ public class PullRequestEntity {
     @Column(name = "story_id", nullable = false)
     private UUID storyId;
 
+    @Column(name = "subtask_id")
+    private UUID subtaskId;
+
     @Column(name = "repository_id", nullable = false)
     private UUID repositoryId;
 

@@ -59,7 +59,6 @@ final class BoardFixtures {
                 column.getId(),
                 rank,
                 List.of(),
-                List.of(),
                 List.of()
         );
     }

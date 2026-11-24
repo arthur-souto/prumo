@@ -54,12 +54,21 @@ public class UserStoryEntity {
     @Column(name = "repository_id")
     private UUID repositoryId;
 
-    @Column(name = "branch_name")
-    private String branchName;
+    @Column(name = "assignee_id")
+    private UUID assigneeId;
+
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public UUID getAssigneeId() {
+        return assigneeId;
+    }
+
+    public void setAssigneeId(UUID assigneeId) {
+        this.assigneeId = assigneeId;
+    }
 }

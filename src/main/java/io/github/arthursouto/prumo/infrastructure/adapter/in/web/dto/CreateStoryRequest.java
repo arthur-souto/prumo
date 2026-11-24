@@ -20,7 +20,6 @@ public record CreateStoryRequest(
         StoryPriority priority,
         @Min(0) @Max(1000) Integer storyPoints,
         @Size(max = 20) List<@NotBlank @Size(max = 40) String> labels,
-        @Size(max = 50) List<@Valid ChecklistItemRequest> subtasks,
         @Size(max = 50) List<@Valid ChecklistItemRequest> acceptanceCriteria,
         UUID columnId
 ) {

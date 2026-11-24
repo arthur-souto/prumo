@@ -26,7 +26,6 @@ public class UpdateStoryService implements UpdateStoryUseCase {
                 command.priority() == null ? StoryPriority.MEDIUM : command.priority(),
                 command.storyPoints(),
                 Checklists.labels(command.labels()),
-                Checklists.items(command.subtasks(), story.getSubtasks()),
                 Checklists.items(command.acceptanceCriteria(), story.getAcceptanceCriteria())
         );
 

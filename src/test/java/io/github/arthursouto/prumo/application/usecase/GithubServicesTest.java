@@ -3,13 +3,11 @@ package io.github.arthursouto.prumo.application.usecase;
 import io.github.arthursouto.prumo.application.exceptions.GithubFailure;
 import io.github.arthursouto.prumo.application.exceptions.GithubIntegrationException;
 import io.github.arthursouto.prumo.application.port.in.command.ConnectRepositoryCommand;
-import io.github.arthursouto.prumo.application.port.in.command.CreateStoryBranchCommand;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.DisconnectRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.LinkStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.ListAccessibleRepositoriesQuery;
 import io.github.arthursouto.prumo.application.port.in.command.SaveGithubTokenCommand;
-import io.github.arthursouto.prumo.application.port.in.command.SuggestBranchNameQuery;
 import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubPort;
@@ -85,7 +83,7 @@ class GithubServicesTest {
         workspace = BoardFixtures.workspaceWithMember(ownerId, memberId);
         Board board = BoardFixtures.boardFor(workspace);
         story = BoardFixtures.story(workspace, board.first(), 12, "V");
-        story.update("Reset the Password", null, story.getPriority(), null, List.of(), List.of(), List.of());
+        story.update("Reset the Password", null, story.getPriority(), null, List.of(), List.of());
         access = new WorkspaceAccess(workspaceRepository);
         lookup = new StoryLookup(access, storyRepository);
         tokens = new GithubTokens(connectionRepository, cipher);
@@ -229,49 +227,6 @@ class GithubServicesTest {
                 .execute(new LinkStoryRepositoryCommand(ownerId, workspace.getId(), "PRU-12", foreign.getId())))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(story.getRepositoryId()).isNull();
-    }
-
-    @Test
-    void suggestsTheBranchFromTheKeyAndTitle() {
-        assertThat(new SuggestBranchNameService(lookup)
-                .execute(new SuggestBranchNameQuery(memberId, workspace.getId(), "pru-12")))
-                .isEqualTo("feature/PRU-12-reset-the-password");
-    }
-
-    @Test
-    void createsTheBranchFromTheDefaultBranchAndRecordsIt() {
-        withToken(memberId);
-        story.linkRepository(repository.getId());
-        when(repositoryPort.findById(repository.getId())).thenReturn(Optional.of(repository));
-
-        UserStory updated = new CreateStoryBranchService(lookup, storyRepository, repositoryPort, tokens, github)
-                .execute(new CreateStoryBranchCommand(memberId, workspace.getId(), "PRU-12", " feature/PRU-12-x "));
-
-        verify(github).createBranch("ghp_plain", "arthur", "prumo", "feature/PRU-12-x", "main");
-        assertThat(updated.getBranchName()).isEqualTo("feature/PRU-12-x");
-    }
-
-    @Test
-    void aBranchNeedsALinkedRepository() {
-        assertThatThrownBy(() -> new CreateStoryBranchService(lookup, storyRepository, repositoryPort, tokens, github)
-                .execute(new CreateStoryBranchCommand(memberId, workspace.getId(), "PRU-12", "feature/x")))
-                .isInstanceOf(BusinessRuleException.class);
-        verify(github, never()).createBranch(any(), any(), any(), any(), any());
-    }
-
-    @Test
-    void githubFailuresWhileBranchingLeaveTheStoryUntouched() {
-        withToken(memberId);
-        story.linkRepository(repository.getId());
-        when(repositoryPort.findById(repository.getId())).thenReturn(Optional.of(repository));
-        org.mockito.Mockito.doThrow(new GithubIntegrationException(GithubFailure.BRANCH_EXISTS, "exists"))
-                .when(github).createBranch(any(), any(), any(), any(), any());
-
-        assertThatThrownBy(() -> new CreateStoryBranchService(lookup, storyRepository, repositoryPort, tokens, github)
-                .execute(new CreateStoryBranchCommand(memberId, workspace.getId(), "PRU-12", "feature/x")))
-                .isInstanceOf(GithubIntegrationException.class);
-        assertThat(story.getBranchName()).isNull();
-        verify(storyRepository, never()).save(any());
     }
 
     @Test

@@ -52,6 +52,7 @@ public class BoardPersistenceAdapter implements BoardRepositoryPort {
         });
         entity.setKeyPrefix(board.getKeyPrefix());
         entity.setAutomationEnabled(board.isAutomationEnabled());
+        entity.setConsolidateStories(board.isConsolidateStories());
 
         try {
             boardRepository.saveAndFlush(entity);

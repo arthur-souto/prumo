@@ -4,6 +4,7 @@ import io.github.arthursouto.prumo.domain.model.story.ChecklistItem;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
+import io.github.arthursouto.prumo.domain.model.story.SubtaskProgress;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -21,16 +22,20 @@ public record StoryResponse(
         Integer storyPoints,
         UUID columnId,
         List<String> labels,
-        List<ChecklistResponse> subtasks,
         List<ChecklistResponse> acceptanceCriteria,
         UUID repositoryId,
-        String branchName,
+        UUID assigneeId,
         List<PullRequestResponse> pullRequests,
+        @Schema(description = "Present on the board; null when not computed for this response") SubtaskProgressResponse subtasks,
         Instant createdAt,
         Instant updatedAt
 ) {
 
     public static StoryResponse from(UserStory story) {
+        return from(story, null);
+    }
+
+    public static StoryResponse from(UserStory story, SubtaskProgress progress) {
         return new StoryResponse(
                 story.getId(),
                 story.getKey(),
@@ -40,14 +45,17 @@ public record StoryResponse(
                 story.getStoryPoints(),
                 story.getColumnId(),
                 story.getLabels(),
-                story.getSubtasks().stream().map(ChecklistResponse::from).toList(),
                 story.getAcceptanceCriteria().stream().map(ChecklistResponse::from).toList(),
                 story.getRepositoryId(),
-                story.getBranchName(),
+                story.getAssigneeId(),
                 story.getPullRequests().stream().map(PullRequestResponse::from).toList(),
+                progress == null ? null : new SubtaskProgressResponse(progress.total(), progress.done()),
                 story.getCreatedAt(),
                 story.getUpdatedAt()
         );
+    }
+
+    public record SubtaskProgressResponse(int total, int done) {
     }
 
     public record ChecklistResponse(UUID id, String text, boolean done) {
@@ -63,7 +71,8 @@ public record StoryResponse(
             PullRequestState state,
             String url,
             String branch,
-            UUID repositoryId
+            UUID repositoryId,
+            UUID subtaskId
     ) {
 
         static PullRequestResponse from(PullRequest pullRequest) {
@@ -73,7 +82,8 @@ public record StoryResponse(
                     pullRequest.state(),
                     pullRequest.url(),
                     pullRequest.branch(),
-                    pullRequest.repositoryId()
+                    pullRequest.repositoryId(),
+                    pullRequest.subtaskId()
             );
         }
     }
