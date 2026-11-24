@@ -5,16 +5,19 @@ type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   error?: string;
   hint?: string;
+  hideLabel?: boolean;
+  /** Label beside the input ("label: value") instead of above it. */
+  inline?: boolean;
 };
 
-export function TextField({ label, error, hint, id, required, ...rest }: TextFieldProps) {
+export function TextField({ label, error, hint, hideLabel, inline, id, required, ...rest }: TextFieldProps) {
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
 
   return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={inputId}>
+    <div className={`${styles.field} ${inline ? styles.inline : ""}`}>
+      <label className={`${styles.label} ${hideLabel ? styles.visuallyHidden : ""}`} htmlFor={inputId}>
         {label}
         {required ? <span className={styles.required} aria-hidden="true"> *</span> : null}
       </label>

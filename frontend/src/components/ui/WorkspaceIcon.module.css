@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
-  color: var(--color-neutral-0);
+  color: var(--avatar-text);
   font-weight: var(--font-weight-bold);
   user-select: none;
 }

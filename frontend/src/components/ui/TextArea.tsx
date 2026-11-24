@@ -5,16 +5,17 @@ type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
   error?: string;
   hint?: string;
+  hideLabel?: boolean;
 };
 
-export function TextArea({ label, error, hint, id, required, ...rest }: TextAreaProps) {
+export function TextArea({ label, error, hint, hideLabel, id, required, ...rest }: TextAreaProps) {
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
 
   return (
     <div className={styles.field}>
-      <label className={styles.label} htmlFor={inputId}>
+      <label className={`${styles.label} ${hideLabel ? styles.visuallyHidden : ""}`} htmlFor={inputId}>
         {label}
         {required ? <span className={styles.required} aria-hidden="true"> *</span> : null}
       </label>

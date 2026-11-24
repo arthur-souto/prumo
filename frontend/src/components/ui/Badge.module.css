@@ -1,11 +1,11 @@
-.lozenge {
-  display: inline-block;
-  max-width: 100%;
+.badge {
+  display: inline-flex;
+  align-items: center;
   padding: 0 var(--space-1);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  line-height: 1rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -16,17 +16,27 @@
   color: var(--lozenge-neutral-text);
 }
 
-.blue {
+.primary {
+  background: var(--brand-bg-subtle);
+  color: var(--text-link);
+}
+
+.info {
   background: var(--lozenge-blue-bg);
   color: var(--lozenge-blue-text);
 }
 
-.green {
+.success {
   background: var(--lozenge-green-bg);
   color: var(--lozenge-green-text);
 }
 
-.yellow {
+.warning {
   background: var(--lozenge-yellow-bg);
   color: var(--lozenge-yellow-text);
+}
+
+.danger {
+  background: var(--danger-bg-subtle);
+  color: var(--text-danger);
 }

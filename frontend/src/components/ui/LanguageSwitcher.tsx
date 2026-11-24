@@ -3,15 +3,15 @@
 import { useRouter } from "next/navigation";
 import { persistLocale, useI18n } from "@/i18n/client";
 import { LOCALES, isLocale } from "@/i18n/core";
-import styles from "./LanguageSwitcher.module.css";
+import { Select } from "./Select";
 
 export function LanguageSwitcher() {
   const router = useRouter();
   const { locale, t } = useI18n();
 
   return (
-    <select
-      className={styles.select}
+    <Select
+      compact
       aria-label={t("lang.label")}
       value={locale}
       onChange={(event) => {
@@ -26,6 +26,6 @@ export function LanguageSwitcher() {
           {t(`lang.${option}`)}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }

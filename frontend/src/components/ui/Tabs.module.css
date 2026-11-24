@@ -1,0 +1,31 @@
+.list {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.trigger {
+  margin-bottom: calc(-1 * var(--border-width));
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 0;
+  border-bottom: var(--border-width-thick) solid transparent;
+  color: var(--text-subtle);
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  background: var(--surface-hover);
+  color: var(--text-default);
+}
+
+.trigger[data-state="active"] {
+  border-bottom-color: var(--brand-bg);
+  color: var(--text-link);
+}
+
+.content {
+  padding-top: var(--space-4);
+}

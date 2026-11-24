@@ -41,21 +41,21 @@
   background: var(--brand-bg-pressed);
 }
 
-.default {
+.secondary {
   background: var(--surface-card);
   color: var(--text-default);
   box-shadow: inset 0 0 0 var(--border-width) var(--border-input);
 }
 
-.default:hover:not(:disabled) {
+.secondary:hover:not(:disabled) {
   background: var(--surface-hover);
 }
 
-.default:active:not(:disabled) {
+.secondary:active:not(:disabled) {
   background: var(--surface-pressed);
 }
 
-.default:focus-visible {
+.secondary:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
@@ -91,4 +91,10 @@
 
 .danger:hover:not(:disabled) {
   background: var(--danger-bg-hover);
+}
+
+.sm {
+  height: var(--control-height-compact);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
 }

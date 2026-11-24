@@ -8,13 +8,7 @@ export function Logo({ size = "md" }: LogoProps) {
   return (
     <span className={`${styles.logo} ${styles[size]}`}>
       <svg className={styles.mark} viewBox="0 0 40 40" aria-hidden="true">
-        <defs>
-          <linearGradient id="prumo-logo-bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" style={{ stopColor: "var(--logo-from)" }} />
-            <stop offset="1" style={{ stopColor: "var(--logo-to)" }} />
-          </linearGradient>
-        </defs>
-        <rect width="40" height="40" rx="4" fill="url(#prumo-logo-bg)" />
+        <rect width="40" height="40" rx="6" fill="var(--logo-bg)" />
         <circle cx="20" cy="9" r="2.4" fill="none" stroke="var(--logo-accent)" strokeWidth="1.8" />
         <path d="M20 11.4v8.1" stroke="var(--logo-accent)" strokeWidth="1.8" strokeLinecap="round" />
         <path d="M20 17.5 27.5 26 20 34.5 12.5 26z" fill="var(--logo-accent)" opacity="0.38" />

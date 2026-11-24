@@ -1,0 +1,36 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+}
+
+.compact {
+  padding: var(--space-4) var(--space-3);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-full);
+  color: var(--text-subtlest);
+}
+
+.title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.description {
+  max-width: 24rem;
+  color: var(--text-subtlest);
+  font-size: var(--font-size-sm);
+}
+
+.action {
+  margin-top: var(--space-2);
+}

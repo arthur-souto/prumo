@@ -1,8 +1,16 @@
 .alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
+  border-left: var(--border-width-accent) solid;
   border-radius: var(--radius-sm);
-  border-left: 4px solid;
   font-size: var(--font-size-md);
+}
+
+.icon {
+  flex: none;
+  margin-top: var(--space-0-5);
 }
 
 .danger {
@@ -11,8 +19,16 @@
   color: var(--text-default);
 }
 
+.danger .icon {
+  color: var(--text-danger);
+}
+
 .info {
   background: var(--brand-bg-subtle);
   border-color: var(--border-focus);
   color: var(--text-default);
+}
+
+.info .icon {
+  color: var(--text-link);
 }
