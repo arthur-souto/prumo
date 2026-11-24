@@ -112,14 +112,31 @@ Cada workspace tem um quadro criado no primeiro acesso, com as colunas *To Do*, 
 | Endpoint (base `/api/v1/workspaces/{id}`) | Descrição |
 |---|---|
 | `GET /board` | Colunas em ordem e todas as histórias |
-| `PUT /board/settings` | Prefixo da chave (travado depois da primeira história) e automação com o GitHub. `OWNER`/`ADMIN` |
+| `PUT /board/settings` | Prefixo da chave (travado depois da primeira história), automação com o GitHub e consolidação das histórias (`consolidateStories`). `OWNER`/`ADMIN` |
 | `POST /board/columns`, `PUT /board/columns/{id}`, `PUT /board/columns/order`, `DELETE /board/columns/{id}?moveTo=` | Gerência das colunas. `OWNER`/`ADMIN` |
 | `POST /stories`, `GET /stories?label=&priority=&q=` | Cria e lista (filtros por label, prioridade e texto) |
 | `GET/PUT/DELETE /stories/{key}` | Detalhe, edição e exclusão |
-| `PATCH /stories/{key}/checklist/{itemId}` | Marca um critério de aceite ou subtarefa |
+| `PATCH /stories/{key}/checklist/{itemId}` | Marca um critério de aceite |
+| `PUT /stories/{key}/assignee` | Define ou remove o responsável (`assigneeId`, um membro do workspace) |
+| `GET /members` | Membros do workspace, com `avatarUrl` (foto do GitHub, quando o usuário entrou por ele) |
 | `PUT /stories/{key}/move` | Move para uma coluna entre dois vizinhos (`afterStoryId`/`beforeStoryId`); grava só o card movido |
 
-A ordem dos cards usa rank fracionário em base 62 (`Rank`), então mover um card não reescreve os outros; se um rank esgotar, a coluna é reequilibrada. Qualquer membro trabalha com histórias; estrutura do quadro exige `OWNER`/`ADMIN`. Quem não é membro recebe 404. No front, o quadro fica em `/workspaces/{id}/board` (arrastar e soltar, painel de detalhe, filtros e busca).
+A ordem dos cards usa rank fracionário em base 62 (`Rank`), então mover um card não reescreve os outros; se um rank esgotar, a coluna é reequilibrada. Qualquer membro trabalha com histórias; estrutura do quadro exige `OWNER`/`ADMIN`. Quem não é membro recebe 404. No front, o quadro fica em `/workspaces/{id}/board` (arrastar e soltar, diálogo de detalhe, filtros e busca). Os cards mostram descrição, responsável, progresso das subtarefas (`2/5`) e indicador de PR.
+
+### Subtarefas
+
+Uma história se divide em **subtarefas**, e é a subtarefa (não a história) que recebe a branch, como no Jira. Cada subtarefa é uma entidade própria: chave na mesma sequência do workspace (história `PRU-12`, subtarefa `PRU-13`), título, descrição em Markdown opcional, ordem dentro da história e status próprio (`TO_DO`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`), independente das colunas do quadro. Não têm responsável nem pontos.
+
+| Endpoint (base `/api/v1/workspaces/{id}`) | Descrição |
+|---|---|
+| `POST /stories/{key}/subtasks` | Cria. Com `createBranch: true` e `branchName`, cria a branch no repositório vinculado à história (a branch é criada no GitHub antes de salvar, então uma falha não deixa subtarefa órfã) |
+| `GET /stories/{key}/subtasks` | Lista as subtarefas da história |
+| `GET/PUT/DELETE /subtasks/{key}` | Detalhe, edição (título e descrição) e exclusão |
+| `PUT /subtasks/{key}/status` | Muda o status |
+| `GET /subtasks/{key}/branch-suggestion` | Sugere `feature/PRU-13-titulo` |
+| `POST /subtasks/{key}/branch` | Cria a branch depois. Uma subtarefa tem no máximo uma; exige repositório vinculado à história |
+
+No front, as subtarefas ficam no diálogo da história (status inline, branch com link e botão de copiar, PRs com o estado, e "Adicionar subtarefa" com a opção **Criar branch**) e têm página própria em `/workspaces/{id}/subtasks/{key}`. Criar uma história não cria mais branch.
 
 ### Integração com o GitHub
 
@@ -133,15 +150,27 @@ Sem ela a API responde `503 NOT_CONFIGURED` nas rotas do GitHub; o resto do sist
 
 - `GET /api/v1/github/repositories`: repositórios acessíveis ao token.
 - `POST /workspaces/{id}/repositories` (`OWNER`/`ADMIN`): conecta um repositório ao workspace; `GET` lista e `DELETE /{repoId}` desconecta; `POST /repositories/sync` força a sincronização.
-- Na história: `PUT /stories/{key}/repository` (vincular), `GET /stories/{key}/branch-suggestion` (`feature/PRU-12-titulo`), `POST /stories/{key}/branch` e `POST /stories/{key}/new-repository`.
+- Na história: `PUT /stories/{key}/repository` (vincula o repositório, que é onde as branches das subtarefas são criadas) e `POST /stories/{key}/new-repository`. A criação de branch fica nas subtarefas (veja acima).
 
-Como o `localhost` não recebe webhooks, os PRs são detectados por **polling** (ETag, então respostas 304 não gastam limite): um PR pertence à história cuja chave aparece no nome da branch ou no título. A automação é opcional e vem desligada: PR aberto leva a história para *In Review* e PR mergeado para *Done* (só na mudança de estado, então um card movido à mão não é puxado de volta). Erros do GitHub voltam com `code` estável (`MISSING_TOKEN`, `INVALID_TOKEN`, `RATE_LIMITED`, `NOT_FOUND`, `BRANCH_EXISTS`, `UNAVAILABLE`...) e não quebram o quadro.
+Como o `localhost` não recebe webhooks, os PRs são detectados por **polling** (ETag, então respostas 304 não gastam limite): um PR é associado pela chave que aparece no nome da branch ou no título. Se a chave é de uma **subtarefa**, o PR fica nela e também aparece na história; se cita só a chave da história, fica só na história. A automação é opcional e vem desligada: PR aberto leva a subtarefa para `IN_REVIEW` e PR mergeado para `DONE` (PRs que citam só a história movem a história entre *In Review* e *Done*, como antes). Só vale na mudança de estado, então algo movido à mão não é puxado de volta. Com a **consolidação** ligada (`consolidateStories`, desligada por padrão), o evento que deixa todas as subtarefas em `DONE` move a história para *Done*; mover a história manualmente sempre prevalece. Erros do GitHub voltam com `code` estável (`MISSING_TOKEN`, `INVALID_TOKEN`, `RATE_LIMITED`, `NOT_FOUND`, `BRANCH_EXISTS`, `UNAVAILABLE`...) e não quebram o quadro.
 
 | Variável | Padrão | Uso |
 |---|---|---|
 | `PRUMO_ENCRYPTION_KEY` | vazio | Chave AES de 32 bytes em Base64 |
 | `GITHUB_POLLING_ENABLED` | `true` | Liga o polling |
 | `GITHUB_POLLING_INTERVAL` | `60s` | Intervalo do polling |
+
+Como usar pela interface:
+
+1. Gere um token em https://github.com/settings/tokens (escopo `repo`) e salve em **Configurações** (`/settings`). Ele vale para todos os seus workspaces.
+2. No workspace, abra **Repositórios** e conecte os repositórios que o time usa.
+3. Na história, escolha o **Repositório** no painel lateral (ou crie um novo).
+4. Ao adicionar uma subtarefa, marque **Criar branch** (o nome sugerido usa a chave da subtarefa e pode ser editado), ou crie a branch depois na própria subtarefa. Se a história não tem repositório, a opção fica desabilitada.
+5. Abra o PR com a chave da subtarefa (`PRU-13`) no nome da branch ou no título. Ele aparece na subtarefa e na história em até um minuto.
+
+### Migração para subtarefas
+
+A migration `V11` converte os dados existentes: cada item do checklist de subtarefas vira uma subtarefa (`DONE` se estava marcado, senão `TO_DO`) com chave nova, sem colidir com as existentes; história que tinha branch ganha a subtarefa "Implementação inicial" com a branch e os PRs dessa branch (status conforme os PRs: mergeado `DONE`, aberto `IN_REVIEW`, senão `IN_PROGRESS`); os PRs de outras branches continuam na história. Nada fica órfão. O Flyway Community não tem `undo`, então o script de reversão manual está em `src/main/resources/db/undo/U11__create_story_subtasks.sql` (rode-o e remova a linha `11` de `flyway_schema_history`). A migração é coberta por `StorySubtaskMigrationIT`.
 
 ### Front end (Next.js)
 
@@ -154,7 +183,7 @@ npm install
 npm run dev
 ```
 
-Telas: `/login`, `/register` e `/` (protegida). O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend.
+Telas: `/login`, `/register`, `/` (workspaces), `/settings` (token do GitHub), `/workspaces/{id}` (configurações), `/board`, `/backlog`, `/repositories` e `/subtasks/{key}`. O callback do GitHub é `/auth/callback`, então mantenha `FRONTEND_OAUTH_CALLBACK_URL=http://localhost:3000/auth/callback` no backend.
 
 ### Idiomas
 
