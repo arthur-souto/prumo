@@ -55,6 +55,10 @@ export function ActivityFeed({ workspaceId, scope, version }: ActivityFeedProps)
             .map((field) => t(`activity.field.${field}`))
             .join(", "),
         });
+      case "STORY_POINTS_CHANGED":
+        if (!entry.to) return t("activity.POINTS_CLEARED");
+        if (!entry.from) return t("activity.POINTS_SET", { to: entry.to });
+        return t("activity.POINTS_CHANGED", { from: entry.from, to: entry.to });
       case "STORY_ASSIGNED":
         if (!entry.to) return t("activity.ASSIGNEE_CLEARED");
         if (!entry.from) return t("activity.ASSIGNEE_SET", { to: entry.to });

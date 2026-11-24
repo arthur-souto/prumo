@@ -293,6 +293,59 @@ class StoryServicesTest {
         assertThat(saved.getValue().actorId()).isEqualTo(userId);
     }
 
+    private List<Activity> pointsEdit(Integer before, Integer after, String title) {
+        asMember();
+        UserStory story = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
+        story.update("Same", null, StoryPriority.LOW, before, List.of(), List.of());
+        when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
+        when(storyRepository.save(story)).thenReturn(story);
+
+        new UpdateStoryService(lookup, storyRepository, new ActivityLog(activityRepository)).execute(
+                new UpdateStoryCommand(userId, workspace.getId(), "PRU-1", title, null, StoryPriority.LOW, after, List.of(), List.of()));
+
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository, org.mockito.Mockito.atLeast(0)).save(saved.capture());
+        return saved.getAllValues();
+    }
+
+    @Test
+    void changingThePointsRecordsTheOldAndTheNewValue() {
+        List<Activity> entries = pointsEdit(3, 5, "Same");
+
+        assertThat(entries).hasSize(1);
+        assertThat(entries.get(0).type()).isEqualTo(ActivityType.STORY_POINTS_CHANGED);
+        assertThat(entries.get(0).fromValue()).isEqualTo("3");
+        assertThat(entries.get(0).toValue()).isEqualTo("5");
+        assertThat(entries.get(0).actorId()).isEqualTo(userId);
+    }
+
+    @Test
+    void settingAndClearingThePointsLeaveTheOtherSideEmpty() {
+        Activity set = pointsEdit(null, 8, "Same").get(0);
+        assertThat(set.fromValue()).isNull();
+        assertThat(set.toValue()).isEqualTo("8");
+
+        org.mockito.Mockito.clearInvocations(activityRepository);
+        Activity cleared = pointsEdit(8, null, "Same").get(0);
+        assertThat(cleared.fromValue()).isEqualTo("8");
+        assertThat(cleared.toValue()).isNull();
+    }
+
+    @Test
+    void editingTheTitleAndThePointsTogetherWritesTwoEntriesWithoutNamingThePointsTwice() {
+        List<Activity> entries = pointsEdit(3, 5, "Renamed");
+
+        assertThat(entries).extracting(Activity::type).containsExactly(ActivityType.STORY_UPDATED, ActivityType.STORY_POINTS_CHANGED);
+        assertThat(entries.get(0).toValue()).isEqualTo("title");
+    }
+
+    @Test
+    void leavingThePointsAloneRecordsNoPointsEntry() {
+        assertThat(pointsEdit(3, 3, "Renamed")).extracting(Activity::type).containsExactly(ActivityType.STORY_UPDATED);
+        org.mockito.Mockito.clearInvocations(activityRepository);
+        assertThat(pointsEdit(null, null, "Same")).isEmpty();
+    }
+
     @Test
     void savingWithoutChangingAnythingLeavesNoHistory() {
         asMember();
