@@ -1,5 +1,8 @@
 package io.github.arthursouto.prumo.application.usecase;
 
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
+import io.github.arthursouto.prumo.domain.model.activity.Activity;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
@@ -13,6 +16,7 @@ import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.github.GithubConnection;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.Subtask;
@@ -49,6 +53,9 @@ import static org.mockito.Mockito.when;
 /** Pull requests that cite a subtask key: where they land and what automation does with the subtask and its story. */
 @ExtendWith(MockitoExtension.class)
 class SubtaskPullRequestSyncTest {
+
+    @Mock
+    private ActivityRepositoryPort activityRepository;
 
     @Mock
     private GithubConnectionRepositoryPort connectionRepository;
@@ -92,7 +99,7 @@ class SubtaskPullRequestSyncTest {
         sibling = Subtask.create(story.getId(), workspace.getId(), 14, "PRU-14", "Tests", null, 1);
         syncer = new PullRequestSyncer(
                 connectionRepository, cipher, github, storyRepository, subtaskRepository,
-                new SubtaskWorkflow(subtaskRepository, storyRepository), boardRepository, repositoryPort,
+                new SubtaskWorkflow(subtaskRepository, storyRepository, new ActivityLog(activityRepository)), boardRepository, repositoryPort,
                 Clock.fixed(now, ZoneOffset.UTC)
         );
         lenient().when(connectionRepository.findByUserId(userId))
@@ -188,7 +195,14 @@ class SubtaskPullRequestSyncTest {
         syncer.sync(repository);
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_REVIEW);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
         assertThat(story.getColumnId()).isEqualTo(board.first().getId());
+    }
+
+    @Test
+    void aSubtaskNeverTouchedByTheAutomationKeepsTheUserAsTheSource() {
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.USER);
+        assertThat(sibling.getStatusSource()).isEqualTo(ChangeSource.USER);
     }
 
     @Test
@@ -213,7 +227,9 @@ class SubtaskPullRequestSyncTest {
         syncer.sync(repository);
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
         assertThat(story.getColumnId()).isEqualTo(board.ofKind(ColumnKind.DONE).orElseThrow().getId());
+        assertThat(story.getColumnSource()).isEqualTo(ChangeSource.GITHUB);
     }
 
     @Test
@@ -237,6 +253,7 @@ class SubtaskPullRequestSyncTest {
         syncer.sync(repository);
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_PROGRESS);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.GITHUB);
         verify(subtaskRepository).save(subtask);
         assertThat(story.getColumnId()).isEqualTo(board.first().getId());
     }
@@ -306,5 +323,21 @@ class SubtaskPullRequestSyncTest {
 
         assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.IN_PROGRESS);
         assertThat(saved.get(0).subtaskId()).isEqualTo(subtask.getId());
+    }
+
+    @Test
+    void theHistoryAttributesAnAutomatedChangeToGithubAndNotToAnyUser() {
+        board.setAutomationEnabled(true);
+        page(PullRequestState.OPEN, "feature/PRU-13-endpoint", "Add endpoint");
+
+        syncer.sync(repository);
+
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository).save(saved.capture());
+        assertThat(saved.getValue().type()).isEqualTo(ActivityType.SUBTASK_STATUS_CHANGED);
+        assertThat(saved.getValue().subtaskKey()).isEqualTo(subtask.getKey());
+        assertThat(saved.getValue().source()).isEqualTo(ChangeSource.GITHUB);
+        assertThat(saved.getValue().actorId()).isNull();
+        assertThat(saved.getValue().toValue()).isEqualTo("IN_REVIEW");
     }
 }

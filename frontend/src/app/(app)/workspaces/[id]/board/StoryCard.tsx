@@ -6,6 +6,7 @@ import { Bookmark, GitBranch, GitMerge, GitPullRequest, ListChecks, User } from 
 import { useT } from "@/i18n/client";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Member, Story } from "@/lib/board-types";
+import { GithubOrigin } from "./GithubOrigin";
 import { PriorityBadge } from "./PriorityBadge";
 import styles from "./board.module.css";
 
@@ -126,6 +127,7 @@ export function CardContent({
             {story.subtasks.done}/{story.subtasks.total}
           </span>
         ) : null}
+        {story.columnSource === "GITHUB" ? <GithubOrigin compact action="column" /> : null}
         {pullRequest ? (
           <span
             className={`${styles.icon} ${pullRequest.className}`}

@@ -2,6 +2,7 @@ package io.github.arthursouto.prumo.application.usecase;
 
 import io.github.arthursouto.prumo.application.exceptions.GithubFailure;
 import io.github.arthursouto.prumo.application.exceptions.GithubIntegrationException;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
@@ -15,6 +16,7 @@ import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.github.GithubConnection;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
@@ -44,6 +46,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PullRequestSyncerTest {
+
+    @Mock
+    private ActivityRepositoryPort activityRepository;
 
     @Mock
     private GithubConnectionRepositoryPort connectionRepository;
@@ -86,7 +91,7 @@ class PullRequestSyncerTest {
                 github,
                 storyRepository,
                 subtaskRepository,
-                new SubtaskWorkflow(subtaskRepository, storyRepository),
+                new SubtaskWorkflow(subtaskRepository, storyRepository, new ActivityLog(activityRepository)),
                 boardRepository,
                 repositoryPort,
                 Clock.fixed(now, ZoneOffset.UTC)
@@ -178,6 +183,7 @@ class PullRequestSyncerTest {
         syncer.sync(repository);
 
         assertThat(story.getColumnId()).isEqualTo(BoardFixtures.column(board, ColumnKind.IN_REVIEW).getId());
+        assertThat(story.getColumnSource()).isEqualTo(ChangeSource.GITHUB);
         verify(storyRepository).save(story);
     }
 

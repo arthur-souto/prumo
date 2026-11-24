@@ -16,6 +16,7 @@ public final class UserStory {
     private StoryPriority priority;
     private Integer storyPoints;
     private UUID columnId;
+    private ChangeSource columnSource = ChangeSource.USER;
     private String rank;
     private List<String> labels;
     private List<ChecklistItem> acceptanceCriteria;
@@ -144,9 +145,24 @@ public final class UserStory {
     }
 
     public void moveTo(UUID columnId, String rank) {
+        moveTo(columnId, rank, ChangeSource.USER);
+    }
+
+    public void moveTo(UUID columnId, String rank, ChangeSource source) {
         this.columnId = columnId;
         this.rank = rank;
+        this.columnSource = source;
         touch();
+    }
+
+    /** Used when rebuilding the story from storage, without touching updatedAt. */
+    public UserStory withColumnSource(ChangeSource columnSource) {
+        this.columnSource = columnSource;
+        return this;
+    }
+
+    public ChangeSource getColumnSource() {
+        return columnSource;
     }
 
     public boolean setChecklistItemDone(UUID itemId, boolean done) {

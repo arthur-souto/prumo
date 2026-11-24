@@ -31,6 +31,7 @@ import {
 import { isHttpUrl, parseLabels } from "@/lib/board-utils";
 import { sendJson } from "@/lib/client";
 import { formatDate } from "@/lib/workspace-types";
+import { ActivityFeed } from "./ActivityFeed";
 import { Subtasks } from "./Subtasks";
 import styles from "./StoryDrawer.module.css";
 
@@ -80,6 +81,7 @@ export function StoryDrawer({
   const [deleting, setDeleting] = useState(false);
   const [githubError, setGithubError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [subtaskChanges, setSubtaskChanges] = useState(0);
 
   const repository = repositories.find((candidate) => candidate.id === story.repositoryId);
   const orderedColumns = useMemo(() => [...columns].sort((a, b) => a.position - b.position), [columns]);
@@ -339,7 +341,10 @@ export function StoryDrawer({
               workspaceId={workspaceId}
               story={story}
               repository={repository}
-              onProgress={(progress) => onChange({ ...story, subtasks: progress })}
+              onProgress={(progress) => {
+                onChange({ ...story, subtasks: progress });
+                setSubtaskChanges((count) => count + 1);
+              }}
             />
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>{t("story.pullRequests")}</h3>
@@ -372,6 +377,11 @@ export function StoryDrawer({
                 </ul>
               )}
             </section>
+            <ActivityFeed
+              workspaceId={workspaceId}
+              scope={`stories/${story.key}`}
+              version={`${story.updatedAt}|${story.columnId}|${story.assigneeId}|${subtaskChanges}`}
+            />
           </div>
 
           <aside className={styles.side}>

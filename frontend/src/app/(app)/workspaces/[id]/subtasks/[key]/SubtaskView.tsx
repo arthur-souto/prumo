@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Markdown } from "@/components/ui/Markdown";
 import { Select } from "@/components/ui/Select";
+import { ActivityFeed } from "../../board/ActivityFeed";
+import { GithubOrigin } from "../../board/GithubOrigin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { TextArea } from "@/components/ui/TextArea";
 import { TextField } from "@/components/ui/TextField";
@@ -160,6 +162,8 @@ export function SubtaskView({ workspaceId, initial, storyTitle, repository, canB
             )}
           </section>
 
+          <ActivityFeed workspaceId={workspaceId} scope={`subtasks/${subtask.key}`} version={`${subtask.updatedAt}|${subtask.status}`} />
+
           <div className={styles.actions}>
             <Button type="submit" appearance="primary" loading={saving} disabled={!dirty}>
               {t("story.save")}
@@ -169,7 +173,9 @@ export function SubtaskView({ workspaceId, initial, storyTitle, repository, canB
 
         <aside className={styles.side}>
           <label className={styles.field}>
-            <span>{t("story.status")}</span>
+            <span>
+              {t("story.status")} {subtask.statusSource === "GITHUB" ? <GithubOrigin action="status" /> : null}
+            </span>
             <Select value={subtask.status} onChange={(event) => void changeStatus(event.target.value as SubtaskStatus)}>
               {SUBTASK_STATUSES.map((status) => (
                 <option key={status} value={status}>

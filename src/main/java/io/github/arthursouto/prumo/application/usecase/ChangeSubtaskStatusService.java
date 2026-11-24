@@ -23,6 +23,6 @@ public class ChangeSubtaskStatusService implements ChangeSubtaskStatusUseCase {
         Subtask subtask = lookup.asMember(command.userId(), command.workspaceId(), command.key());
         Board board = boards.ensure(lookup.workspace(command.userId(), command.workspaceId()));
 
-        return lookup.view(workflow.changeStatus(board, subtask, command.status()));
+        return lookup.view(workflow.changeStatus(board, subtask, command.status(), Actor.user(command.userId())));
     }
 }

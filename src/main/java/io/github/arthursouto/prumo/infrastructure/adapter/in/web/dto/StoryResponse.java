@@ -1,5 +1,6 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto;
 
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.ChecklistItem;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
@@ -21,6 +22,7 @@ public record StoryResponse(
         StoryPriority priority,
         Integer storyPoints,
         UUID columnId,
+        @Schema(description = "Who last moved the story: USER on the board, or GITHUB for the pull request sync") ChangeSource columnSource,
         List<String> labels,
         List<ChecklistResponse> acceptanceCriteria,
         UUID repositoryId,
@@ -44,6 +46,7 @@ public record StoryResponse(
                 story.getPriority(),
                 story.getStoryPoints(),
                 story.getColumnId(),
+                story.getColumnSource(),
                 story.getLabels(),
                 story.getAcceptanceCriteria().stream().map(ChecklistResponse::from).toList(),
                 story.getRepositoryId(),

@@ -9,6 +9,7 @@ import io.github.arthursouto.prumo.application.port.out.GithubPort;
 import io.github.arthursouto.prumo.application.port.out.SubtaskRepositoryPort;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
 import io.github.arthursouto.prumo.domain.exceptions.ResourceNotFoundException;
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
 import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.story.Subtask;
@@ -25,6 +26,7 @@ public class CreateSubtaskService implements CreateSubtaskUseCase {
     private final ConnectedRepositoryPort repositoryPort;
     private final GithubTokens tokens;
     private final GithubPort github;
+    private final ActivityLog activity;
 
     public CreateSubtaskService(StoryLookup stories,
                                 SubtaskLookup lookup,
@@ -33,7 +35,9 @@ public class CreateSubtaskService implements CreateSubtaskUseCase {
                                 SubtaskRepositoryPort subtaskRepository,
                                 ConnectedRepositoryPort repositoryPort,
                                 GithubTokens tokens,
-                                GithubPort github) {
+                                GithubPort github,
+                                ActivityLog activity) {
+        this.activity = activity;
         this.stories = stories;
         this.lookup = lookup;
         this.boards = boards;
@@ -90,6 +94,10 @@ public class CreateSubtaskService implements CreateSubtaskUseCase {
             subtask.recordBranch(branch);
         }
 
-        return lookup.view(subtaskRepository.save(subtask), story);
+        Subtask saved = subtaskRepository.save(subtask);
+        activity.record(saved.getWorkspaceId(), story.getId(), saved.getKey(), Actor.user(command.userId()),
+                ActivityType.SUBTASK_ADDED, null, saved.getTitle());
+
+        return lookup.view(saved, story);
     }
 }

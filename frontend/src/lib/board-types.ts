@@ -6,6 +6,8 @@ export const PRIORITIES: Priority[] = ["URGENT", "HIGH", "MEDIUM", "LOW"];
 
 export type ChecklistItem = { id: string | null; text: string; done: boolean };
 
+export type ChangeSource = "USER" | "GITHUB";
+
 export type SubtaskStatus = "TO_DO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
 
 export const SUBTASK_STATUSES: SubtaskStatus[] = ["TO_DO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
@@ -29,6 +31,8 @@ export type Subtask = {
   title: string;
   description: string | null;
   status: SubtaskStatus;
+  /** Who last changed the status: a person on the board, or the GitHub pull request sync. */
+  statusSource: ChangeSource;
   position: number;
   branchName: string | null;
   pullRequests: PullRequest[];
@@ -44,6 +48,8 @@ export type Story = {
   priority: Priority;
   storyPoints: number | null;
   columnId: string;
+  /** Who last moved the story: a person on the board, or the GitHub pull request sync. */
+  columnSource: ChangeSource;
   labels: string[];
   /** Progress of the story's subtasks; absent when the endpoint does not report it (e.g. after a single-story update). */
   subtasks?: SubtaskProgress | null;
@@ -84,4 +90,25 @@ export type Member = {
   name: string;
   avatarUrl: string | null;
   role: "OWNER" | "ADMIN" | "MEMBER";
+};
+
+export type ActivityType =
+  | "STORY_CREATED"
+  | "STORY_MOVED"
+  | "STORY_UPDATED"
+  | "STORY_ASSIGNED"
+  | "SUBTASK_ADDED"
+  | "SUBTASK_STATUS_CHANGED";
+
+/** One entry of the history of a story or subtask. The actor is null when GitHub made the change. */
+export type ActivityEntry = {
+  id: string;
+  type: ActivityType;
+  source: ChangeSource;
+  actorId: string | null;
+  actorName: string | null;
+  subtaskKey: string | null;
+  from: string | null;
+  to: string | null;
+  createdAt: string;
 };

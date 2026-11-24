@@ -1,8 +1,12 @@
 package io.github.arthursouto.prumo.application.usecase;
 
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
+import io.github.arthursouto.prumo.domain.model.activity.Activity;
+import org.mockito.ArgumentCaptor;
 import io.github.arthursouto.prumo.application.port.in.command.AssignStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.ListWorkspaceMembersQuery;
 import io.github.arthursouto.prumo.application.port.in.result.MemberView;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.UserRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
@@ -34,6 +38,9 @@ import static org.mockito.Mockito.when;
 class AssigneeServicesTest {
 
     @Mock
+    private ActivityRepositoryPort activityRepository;
+
+    @Mock
     private WorkspaceRepositoryPort workspaceRepository;
 
     @Mock
@@ -57,7 +64,7 @@ class AssigneeServicesTest {
         when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
         lenient().when(storyRepository.findByWorkspaceIdAndKey(workspace.getId(), "PRU-1")).thenReturn(Optional.of(story));
         lenient().when(storyRepository.save(any(UserStory.class))).thenAnswer(call -> call.getArgument(0));
-        assign = new AssignStoryService(new StoryLookup(access, storyRepository), access, storyRepository);
+        assign = new AssignStoryService(new StoryLookup(access, storyRepository), access, storyRepository, new ActivityLog(activityRepository));
     }
 
     @Test
@@ -88,5 +95,22 @@ class AssigneeServicesTest {
         assertThat(members).hasSize(1);
         assertThat(members.get(0).name()).isEqualTo("Ada");
         assertThat(members.get(0).avatarUrl()).isEqualTo("https://img/ada.png");
+    }
+
+    @Test
+    void assigningAndUnassigningLeaveHistoryAndKeepingTheSameAssigneeDoesNot() {
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+
+        assign.execute(new AssignStoryCommand(ownerId, workspace.getId(), "PRU-1", memberId));
+        assign.execute(new AssignStoryCommand(ownerId, workspace.getId(), "PRU-1", memberId));
+        assign.execute(new AssignStoryCommand(ownerId, workspace.getId(), "PRU-1", null));
+
+        verify(activityRepository, org.mockito.Mockito.times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(Activity::type).containsOnly(ActivityType.STORY_ASSIGNED);
+        assertThat(saved.getAllValues()).extracting(Activity::fromValue, Activity::toValue)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(null, memberId.toString()),
+                        org.assertj.core.groups.Tuple.tuple(memberId.toString(), null));
+        assertThat(saved.getAllValues()).extracting(Activity::actorId).containsOnly(ownerId);
     }
 }

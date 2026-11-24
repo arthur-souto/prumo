@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { IconButton } from "@/components/ui/IconButton";
 import { Select } from "@/components/ui/Select";
+import { GithubOrigin } from "./GithubOrigin";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { errorMessage, useI18n } from "@/i18n/client";
@@ -233,6 +234,7 @@ export function Subtasks({ workspaceId, story, repository, onProgress }: Subtask
               <Link className={`${styles.name} ${subtask.status === "DONE" ? styles.done : ""}`} href={`/workspaces/${workspaceId}/subtasks/${subtask.key}`}>
                 {subtask.title}
               </Link>
+              {subtask.statusSource === "GITHUB" ? <GithubOrigin action="status" /> : null}
               <Select
                 compact
                 variant="quiet"

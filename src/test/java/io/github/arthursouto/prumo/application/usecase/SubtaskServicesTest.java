@@ -1,5 +1,8 @@
 package io.github.arthursouto.prumo.application.usecase;
 
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
+import io.github.arthursouto.prumo.domain.model.activity.Activity;
+import org.mockito.ArgumentCaptor;
 import io.github.arthursouto.prumo.application.exceptions.GithubFailure;
 import io.github.arthursouto.prumo.application.exceptions.GithubIntegrationException;
 import io.github.arthursouto.prumo.application.port.in.command.ChangeSubtaskStatusCommand;
@@ -11,6 +14,7 @@ import io.github.arthursouto.prumo.application.port.in.command.ListSubtasksQuery
 import io.github.arthursouto.prumo.application.port.in.command.SuggestSubtaskBranchQuery;
 import io.github.arthursouto.prumo.application.port.in.command.UpdateSubtaskCommand;
 import io.github.arthursouto.prumo.application.port.in.result.SubtaskView;
+import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
@@ -25,6 +29,7 @@ import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.github.ConnectedRepository;
 import io.github.arthursouto.prumo.domain.model.github.GithubConnection;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.Subtask;
@@ -54,6 +59,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SubtaskServicesTest {
+
+    @Mock
+    private ActivityRepositoryPort activityRepository;
 
     @Mock
     private WorkspaceRepositoryPort workspaceRepository;
@@ -102,7 +110,7 @@ class SubtaskServicesTest {
         lookup = new SubtaskLookup(access, subtaskRepository, storyRepository);
         provisioner = new BoardProvisioner(boardRepository);
         tokens = new GithubTokens(connectionRepository, cipher);
-        workflow = new SubtaskWorkflow(subtaskRepository, storyRepository);
+        workflow = new SubtaskWorkflow(subtaskRepository, storyRepository, new ActivityLog(activityRepository));
 
         lenient().when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
         lenient().when(boardRepository.findByWorkspaceId(workspace.getId())).thenReturn(Optional.of(board));
@@ -126,7 +134,7 @@ class SubtaskServicesTest {
     }
 
     private CreateSubtaskService creator() {
-        return new CreateSubtaskService(stories, lookup, provisioner, boardRepository, subtaskRepository, repositoryPort, tokens, github);
+        return new CreateSubtaskService(stories, lookup, provisioner, boardRepository, subtaskRepository, repositoryPort, tokens, github, new ActivityLog(activityRepository));
     }
 
     private CreateSubtaskCommand create(String title, boolean branch, String branchName) {
@@ -310,6 +318,17 @@ class SubtaskServicesTest {
     }
 
     @Test
+    void aChangeMadeOnTheBoardTakesTheStatusBackFromGithubToTheUser() {
+        Subtask subtask = existing(13, SubtaskStatus.TO_DO);
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW, ChangeSource.GITHUB);
+
+        changeStatus("PRU-13", SubtaskStatus.DONE);
+
+        assertThat(subtask.getStatus()).isEqualTo(SubtaskStatus.DONE);
+        assertThat(subtask.getStatusSource()).isEqualTo(ChangeSource.USER);
+    }
+
+    @Test
     void theStoryGoesToDoneWhenTheLastSubtaskIsDoneAndConsolidationIsOn() {
         board.setConsolidateStories(true);
         existing(13, SubtaskStatus.DONE);
@@ -357,5 +376,24 @@ class SubtaskServicesTest {
 
         assertThat(story.getColumnId()).isEqualTo(board.ofKind(ColumnKind.IN_PROGRESS).orElseThrow().getId());
         verify(storyRepository, never()).save(any(UserStory.class));
+    }
+
+    @Test
+    void creatingASubtaskAndChangingItsStatusLeaveHistoryByTheUser() {
+        SubtaskView created = creator().execute(create("Write it", false, null));
+        String key = created.subtask().getKey();
+        lenient().when(subtaskRepository.findByWorkspaceIdAndKey(workspace.getId(), key)).thenReturn(Optional.of(created.subtask()));
+
+        changeStatus(key, SubtaskStatus.IN_REVIEW);
+        changeStatus(key, SubtaskStatus.IN_REVIEW);
+
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository, org.mockito.Mockito.times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(Activity::type)
+                .containsExactly(ActivityType.SUBTASK_ADDED, ActivityType.SUBTASK_STATUS_CHANGED);
+        assertThat(saved.getAllValues()).extracting(Activity::subtaskKey).containsOnly(key);
+        assertThat(saved.getAllValues()).extracting(Activity::actorId).containsOnly(userId);
+        assertThat(saved.getAllValues().get(1).fromValue()).isEqualTo("TO_DO");
+        assertThat(saved.getAllValues().get(1).toValue()).isEqualTo("IN_REVIEW");
     }
 }

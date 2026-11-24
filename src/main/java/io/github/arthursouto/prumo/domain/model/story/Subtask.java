@@ -17,6 +17,7 @@ public final class Subtask {
     private String title;
     private String description;
     private SubtaskStatus status;
+    private ChangeSource statusSource = ChangeSource.USER;
     private int position;
     private String branchName;
     private final Instant createdAt;
@@ -90,13 +91,25 @@ public final class Subtask {
 
     /** Returns true when the status actually changed. */
     public boolean changeStatus(SubtaskStatus status) {
+        return changeStatus(status, ChangeSource.USER);
+    }
+
+    /** Returns true when the status actually changed; the source only moves along with a real change. */
+    public boolean changeStatus(SubtaskStatus status, ChangeSource source) {
         if (this.status == status) {
             return false;
         }
 
         this.status = status;
+        this.statusSource = source;
         touch();
         return true;
+    }
+
+    /** Used when rebuilding the subtask from storage, without touching updatedAt. */
+    public Subtask withStatusSource(ChangeSource statusSource) {
+        this.statusSource = statusSource;
+        return this;
     }
 
     public void moveTo(int position) {
@@ -147,6 +160,10 @@ public final class Subtask {
 
     public SubtaskStatus getStatus() {
         return status;
+    }
+
+    public ChangeSource getStatusSource() {
+        return statusSource;
     }
 
     public int getPosition() {

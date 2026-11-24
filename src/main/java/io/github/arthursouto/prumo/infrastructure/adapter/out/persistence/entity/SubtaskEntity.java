@@ -1,5 +1,6 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.entity;
 
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.SubtaskStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +45,10 @@ public class SubtaskEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubtaskStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_source", nullable = false)
+    private ChangeSource statusSource;
 
     @Column(nullable = false)
     private int position;

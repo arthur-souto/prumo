@@ -2,6 +2,7 @@ package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence;
 
 import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.PullRequestState;
 import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
@@ -202,5 +203,28 @@ class SubtaskPersistenceIT {
                 .extracting(PullRequest::number, PullRequest::state).containsExactly(org.assertj.core.groups.Tuple.tuple(4, PullRequestState.CLOSED));
         assertThat(stories.findPullRequestsOfStoryWithoutSubtask(story.getId())).extracting(PullRequest::number).containsExactly(5);
         assertThat(stories.findPullRequestsBySubtaskId(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    void remembersWhetherTheStatusAndTheColumnWereChangedByAPersonOrByGithub() {
+        givenAStory("SRC");
+        Subtask subtask = newSubtask("SRC", "Automated", 0);
+        subtask.changeStatus(SubtaskStatus.IN_REVIEW, ChangeSource.GITHUB);
+        subtasks.save(subtask);
+        story.moveTo(board.ofKind(ColumnKind.IN_REVIEW).orElseThrow().getId(), "n", ChangeSource.GITHUB);
+        stories.save(story);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(subtasks.findByWorkspaceIdAndKey(workspaceId, subtask.getKey()).orElseThrow().getStatusSource()).isEqualTo(ChangeSource.GITHUB);
+        assertThat(stories.findByWorkspaceIdAndKey(workspaceId, story.getKey()).orElseThrow().getColumnSource()).isEqualTo(ChangeSource.GITHUB);
+
+        Subtask byHand = subtasks.findByWorkspaceIdAndKey(workspaceId, subtask.getKey()).orElseThrow();
+        byHand.changeStatus(SubtaskStatus.DONE);
+        subtasks.save(byHand);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(subtasks.findByWorkspaceIdAndKey(workspaceId, subtask.getKey()).orElseThrow().getStatusSource()).isEqualTo(ChangeSource.USER);
     }
 }

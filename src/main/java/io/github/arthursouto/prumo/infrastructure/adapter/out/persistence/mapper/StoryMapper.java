@@ -31,6 +31,7 @@ public final class StoryMapper {
         entity.setPriority(story.getPriority());
         entity.setStoryPoints(story.getStoryPoints());
         entity.setColumnId(story.getColumnId());
+        entity.setColumnSource(story.getColumnSource());
         entity.setSortRank(story.getRank());
         entity.setRepositoryId(story.getRepositoryId());
         entity.setAssigneeId(story.getAssigneeId());
@@ -117,7 +118,7 @@ public final class StoryMapper {
                         .toList(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
-        ).withAssignee(entity.getAssigneeId());
+        ).withAssignee(entity.getAssigneeId()).withColumnSource(entity.getColumnSource());
     }
 
     private static void append(List<StoryChecklistItemEntity> target, UUID storyId, String kind, List<ChecklistItem> items) {

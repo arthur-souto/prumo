@@ -4,7 +4,9 @@ import io.github.arthursouto.prumo.application.port.in.MoveStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.command.MoveStoryCommand;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
+import io.github.arthursouto.prumo.domain.model.activity.ActivityType;
 import io.github.arthursouto.prumo.domain.model.board.Board;
+import io.github.arthursouto.prumo.domain.model.board.BoardColumn;
 import io.github.arthursouto.prumo.domain.model.board.Rank;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 
@@ -18,11 +20,14 @@ public class MoveStoryService implements MoveStoryUseCase {
     private final BoardProvisioner boards;
     private final StoryLookup stories;
     private final StoryRepositoryPort storyRepository;
+    private final ActivityLog activity;
 
     public MoveStoryService(WorkspaceAccess access,
                             BoardProvisioner boards,
                             StoryLookup stories,
-                            StoryRepositoryPort storyRepository) {
+                            StoryRepositoryPort storyRepository,
+                            ActivityLog activity) {
+        this.activity = activity;
         this.access = access;
         this.boards = boards;
         this.stories = stories;
@@ -34,7 +39,19 @@ public class MoveStoryService implements MoveStoryUseCase {
         UserStory story = stories.asMember(command.userId(), command.workspaceId(), command.key());
         Board board = boards.ensure(access.member(command.userId(), command.workspaceId()));
         board.require(command.columnId());
+        UUID fromColumn = story.getColumnId();
 
+        UserStory moved = place(command, story, board);
+
+        if (!fromColumn.equals(moved.getColumnId())) {
+            activity.record(moved.getWorkspaceId(), moved.getId(), Actor.user(command.userId()), ActivityType.STORY_MOVED,
+                    board.find(fromColumn).map(BoardColumn::getName).orElse(null), board.require(moved.getColumnId()).getName());
+        }
+
+        return moved;
+    }
+
+    private UserStory place(MoveStoryCommand command, UserStory story, Board board) {
         List<UserStory> column = storyRepository.findAllByColumnId(command.columnId()).stream()
                 .filter(other -> !other.getId().equals(story.getId()))
                 .toList();

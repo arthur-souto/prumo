@@ -171,12 +171,12 @@ public class PullRequestSyncer {
      */
     private void automate(Board board, Subtask subtask, PullRequestState state) {
         switch (state) {
-            case OPEN -> workflow.changeStatus(board, subtask, SubtaskStatus.IN_REVIEW);
-            case MERGED -> workflow.changeStatus(board, subtask, SubtaskStatus.DONE);
+            case OPEN -> workflow.changeStatus(board, subtask, SubtaskStatus.IN_REVIEW, Actor.GITHUB);
+            case MERGED -> workflow.changeStatus(board, subtask, SubtaskStatus.DONE, Actor.GITHUB);
             case CLOSED -> {
                 if (subtask.getStatus() == SubtaskStatus.IN_REVIEW
                         && !anyOpen(storyRepository.findPullRequestsBySubtaskId(subtask.getId()))) {
-                    workflow.changeStatus(board, subtask, SubtaskStatus.IN_PROGRESS);
+                    workflow.changeStatus(board, subtask, SubtaskStatus.IN_PROGRESS, Actor.GITHUB);
                 }
             }
         }
@@ -185,15 +185,15 @@ public class PullRequestSyncer {
     /** The same rule for a story that no subtask took part in: the card moves between the review and progress columns. */
     private void automate(Board board, UserStory story, PullRequestState state) {
         switch (state) {
-            case OPEN -> workflow.moveStory(board, story, ColumnKind.IN_REVIEW);
-            case MERGED -> workflow.moveStory(board, story, ColumnKind.DONE);
+            case OPEN -> workflow.moveStory(board, story, ColumnKind.IN_REVIEW, Actor.GITHUB);
+            case MERGED -> workflow.moveStory(board, story, ColumnKind.DONE, Actor.GITHUB);
             case CLOSED -> {
                 boolean inReview = board.ofKind(ColumnKind.IN_REVIEW)
                         .map(column -> column.getId().equals(story.getColumnId()))
                         .orElse(false);
 
                 if (inReview && !anyOpen(storyRepository.findPullRequestsOfStoryWithoutSubtask(story.getId()))) {
-                    workflow.moveStory(board, story, ColumnKind.IN_PROGRESS);
+                    workflow.moveStory(board, story, ColumnKind.IN_PROGRESS, Actor.GITHUB);
                 }
             }
         }

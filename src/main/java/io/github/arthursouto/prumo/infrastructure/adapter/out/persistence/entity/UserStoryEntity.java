@@ -1,6 +1,7 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.entity;
 
 import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
+import io.github.arthursouto.prumo.domain.model.story.ChangeSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,6 +49,10 @@ public class UserStoryEntity {
     @Column(name = "column_id", nullable = false)
     private UUID columnId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "column_source", nullable = false)
+    private ChangeSource columnSource;
+
     @Column(name = "sort_rank", nullable = false)
     private String sortRank;
 
@@ -63,6 +68,14 @@ public class UserStoryEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public ChangeSource getColumnSource() {
+        return columnSource;
+    }
+
+    public void setColumnSource(ChangeSource columnSource) {
+        this.columnSource = columnSource;
+    }
 
     public UUID getAssigneeId() {
         return assigneeId;
