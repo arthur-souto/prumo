@@ -223,8 +223,6 @@ export const en = {
     title: "Board",
     searchPlaceholder: "Search stories",
     searchLabel: "Search stories",
-    allPriorities: "All priorities",
-    allLabels: "All labels",
     clearFilters: "Clear filters",
     filtersActive: "Filters are on. Clear them to drag cards.",
     createStory: "Create story",

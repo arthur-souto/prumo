@@ -17,29 +17,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/Alert";
 import { useToast } from "@/components/ui/Toast";
-import { Plus, RefreshCw, Search, X, Columns3 } from "lucide-react";
+import { Plus, RefreshCw, Columns3 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { TextField } from "@/components/ui/TextField";
 import { errorMessage, githubReason, useT } from "@/i18n/client";
-import {
-  EMPTY_FILTERS,
-  allLabels,
-  buildLayout,
-  hasFilters,
-  matchesFilters,
-  neighbours,
-  type Filters,
-  type Layout,
-} from "@/lib/board-utils";
+import { allLabels, buildLayout, neighbours, type Layout } from "@/lib/board-utils";
 import { PRIORITIES, type Board, type Column, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
+import { hasStoryFilters, matchesStoryFilters } from "@/lib/story-filters";
 import { sendJson } from "@/lib/client";
 import modal from "../../../modal-form.module.css";
 import settings from "../workspace.module.css";
 import { BoardColumn } from "./BoardColumn";
 import { CardContent } from "./StoryCard";
 import { StoryDrawer } from "./StoryDrawer";
+import { StoryFilterBar } from "../StoryFilterBar";
+import { useStoryFilters } from "../useStoryFilters";
 import { useStoryParam } from "../useStoryParam";
 import styles from "./board.module.css";
 
@@ -76,7 +70,7 @@ export function BoardView({
   const [repositories, setRepositories] = useState(initialRepositories);
   const router = useRouter();
   const params = useSearchParams();
-  const [filters, setFilters] = useState<Filters>({ ...EMPTY_FILTERS, text: params.get("q") ?? "" });
+  const [filters, setFilters] = useStoryFilters();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [storyKey, clearStoryKey] = useStoryParam();
@@ -100,8 +94,6 @@ export function BoardView({
   );
 
   useEffect(() => {
-    setFilters((current) => ({ ...current, text: params.get("q") ?? "" }));
-
     if (params.get("create") === "1") {
       setCreatingIn("first");
       router.replace(`/workspaces/${workspaceId}/board`);
@@ -142,7 +134,12 @@ export function BoardView({
     clearStoryKey();
   }
 
-  const filtering = hasFilters(filters);
+  function openPicked(story: Story) {
+    if (!stories[story.id]) upsert(story);
+    setSelectedId(story.id);
+  }
+
+  const filtering = hasStoryFilters(filters);
   const labels = useMemo(() => allLabels(Object.values(stories)), [stories]);
   const selected = selectedId ? stories[selectedId] : undefined;
   const active = activeId ? stories[activeId] : undefined;
@@ -387,52 +384,14 @@ export function BoardView({
   return (
     <div className={styles.wrapper}>
       <div className={styles.toolbar}>
-        <div className={styles.filters}>
-          <span className={styles.searchWrap}>
-            <Search size={14} aria-hidden="true" className={styles.searchIcon} />
-            <input
-              className={styles.search}
-              type="search"
-              value={filters.text}
-              placeholder={t("board.searchPlaceholder")}
-              aria-label={t("board.searchLabel")}
-              onChange={(event) => setFilters({ ...filters, text: event.target.value })}
-            />
-          </span>
-          <Select
-            compact
-            variant="quiet"
-            value={filters.priority}
-            aria-label={t("story.priority")}
-            onChange={(event) => setFilters({ ...filters, priority: event.target.value as Priority | "" })}
-          >
-            <option value="">{t("board.allPriorities")}</option>
-            {PRIORITIES.map((priority) => (
-              <option key={priority} value={priority}>
-                {t(`priority.${priority}`)}
-              </option>
-            ))}
-          </Select>
-          <Select
-            compact
-            variant="quiet"
-            value={filters.label}
-            aria-label={t("story.labels")}
-            onChange={(event) => setFilters({ ...filters, label: event.target.value })}
-          >
-            <option value="">{t("board.allLabels")}</option>
-            {labels.map((label) => (
-              <option key={label} value={label}>
-                {label}
-              </option>
-            ))}
-          </Select>
-          {filtering ? (
-            <Button appearance="subtle" size="sm" icon={<X size={14} aria-hidden="true" />} onClick={() => setFilters(EMPTY_FILTERS)}>
-              {t("board.clearFilters")}
-            </Button>
-          ) : null}
-        </div>
+        <StoryFilterBar
+          filters={filters}
+          onChange={setFilters}
+          labels={labels}
+          members={members}
+          workspaceId={workspaceId}
+          onPick={openPicked}
+        />
         <div className={styles.toolbarActions}>
           {repositories.length > 0 ? (
             <Button size="sm" loading={syncing} icon={<RefreshCw size={14} aria-hidden="true" />} onClick={syncPullRequests}>
@@ -477,7 +436,7 @@ export function BoardView({
               members={members}
                 key={column.id}
                 column={column}
-                stories={visible.filter((story) => matchesFilters(story, filters))}
+                stories={visible.filter((story) => matchesStoryFilters(story, filters))}
                 allCount={ids.length}
                 filtering={filtering}
                 landedId={landedId}

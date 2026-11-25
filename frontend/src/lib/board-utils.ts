@@ -1,10 +1,6 @@
-import type { Board, Priority, Story } from "./board-types";
+import type { Board, Story } from "./board-types";
 
 export type Layout = Record<string, string[]>;
-
-export type Filters = { text: string; priority: Priority | ""; label: string };
-
-export const EMPTY_FILTERS: Filters = { text: "", priority: "", label: "" };
 
 export function buildLayout(board: Board): Layout {
   const layout: Layout = {};
@@ -18,32 +14,6 @@ export function buildLayout(board: Board): Layout {
   }
 
   return layout;
-}
-
-export function hasFilters(filters: Filters) {
-  return filters.text.trim() !== "" || filters.priority !== "" || filters.label !== "";
-}
-
-export function matchesFilters(story: Story, filters: Filters) {
-  const text = filters.text.trim().toLowerCase();
-
-  if (filters.priority && story.priority !== filters.priority) {
-    return false;
-  }
-
-  if (filters.label && !story.labels.some((label) => label.toLowerCase() === filters.label.toLowerCase())) {
-    return false;
-  }
-
-  if (text === "") {
-    return true;
-  }
-
-  return (
-    story.title.toLowerCase().includes(text) ||
-    story.key.toLowerCase().includes(text) ||
-    (story.description ?? "").toLowerCase().includes(text)
-  );
 }
 
 export function neighbours(items: string[], id: string) {
