@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,6 +60,12 @@ public class SprintPersistenceAdapter implements SprintRepositoryPort {
     @Transactional(readOnly = true)
     public Optional<Sprint> findActive(UUID workspaceId) {
         return repository.findByWorkspaceIdAndState(workspaceId, SprintState.ACTIVE).map(SprintPersistenceAdapter::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Sprint> findAllActive() {
+        return repository.findByState(SprintState.ACTIVE).stream().map(SprintPersistenceAdapter::toDomain).toList();
     }
 
     @Override

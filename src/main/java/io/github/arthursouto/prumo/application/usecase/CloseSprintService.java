@@ -21,15 +21,18 @@ public class CloseSprintService implements CloseSprintUseCase {
     private final SprintRepositoryPort sprintRepository;
     private final StoryRepositoryPort storyRepository;
     private final SprintViews views;
+    private final SprintSnapshots snapshots;
 
     public CloseSprintService(SprintLookup sprints,
                               SprintRepositoryPort sprintRepository,
                               StoryRepositoryPort storyRepository,
-                              SprintViews views) {
+                              SprintViews views,
+                              SprintSnapshots snapshots) {
         this.sprints = sprints;
         this.sprintRepository = sprintRepository;
         this.storyRepository = storyRepository;
         this.views = views;
+        this.snapshots = snapshots;
     }
 
     @Override
@@ -39,6 +42,8 @@ public class CloseSprintService implements CloseSprintUseCase {
         if (!sprint.isActive()) {
             throw new BusinessRuleException("Only the active sprint can be closed");
         }
+
+        snapshots.record(sprint);
 
         Set<UUID> doneColumns = views.doneColumns(command.workspaceId());
         Map<Boolean, List<UserStory>> stories = storyRepository.findAllBySprintIds(List.of(sprint.getId())).stream()

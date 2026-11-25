@@ -17,15 +17,18 @@ public class StartSprintService implements StartSprintUseCase {
     private final SprintRepositoryPort sprintRepository;
     private final StoryRepositoryPort storyRepository;
     private final SprintViews views;
+    private final SprintSnapshots snapshots;
 
     public StartSprintService(SprintLookup sprints,
                               SprintRepositoryPort sprintRepository,
                               StoryRepositoryPort storyRepository,
-                              SprintViews views) {
+                              SprintViews views,
+                              SprintSnapshots snapshots) {
         this.sprints = sprints;
         this.sprintRepository = sprintRepository;
         this.storyRepository = storyRepository;
         this.views = views;
+        this.snapshots = snapshots;
     }
 
     @Override
@@ -42,6 +45,9 @@ public class StartSprintService implements StartSprintUseCase {
 
         sprint.start(SprintViews.points(storyRepository.findAllBySprintIds(List.of(sprint.getId()))));
 
-        return views.of(sprintRepository.save(sprint));
+        Sprint started = sprintRepository.save(sprint);
+        snapshots.record(started);
+
+        return views.of(started);
     }
 }

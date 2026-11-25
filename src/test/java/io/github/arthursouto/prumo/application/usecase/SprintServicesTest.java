@@ -9,6 +9,7 @@ import io.github.arthursouto.prumo.application.port.in.command.UpdateSprintComma
 import io.github.arthursouto.prumo.application.port.in.result.SprintView;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.SprintRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.SprintSnapshotRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.query.SprintSearchCriteria;
@@ -20,6 +21,7 @@ import io.github.arthursouto.prumo.domain.exceptions.ResourceNotFoundException;
 import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
 import io.github.arthursouto.prumo.domain.model.sprint.Sprint;
+import io.github.arthursouto.prumo.domain.model.sprint.SprintSnapshot;
 import io.github.arthursouto.prumo.domain.model.sprint.SprintState;
 import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
@@ -27,10 +29,15 @@ import io.github.arthursouto.prumo.domain.model.workspace.Workspace;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +48,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +72,11 @@ class SprintServicesTest {
     @Mock
     private BoardRepositoryPort boardRepository;
 
+    @Mock
+    private SprintSnapshotRepositoryPort snapshotRepository;
+
+    private final Clock clock = Clock.fixed(Instant.parse("2026-12-03T02:30:00Z"), ZoneOffset.UTC);
+
     private final UUID ownerId = UUID.randomUUID();
     private final UUID memberId = UUID.randomUUID();
     private Workspace workspace;
@@ -70,6 +84,7 @@ class SprintServicesTest {
     private WorkspaceAccess access;
     private SprintLookup lookup;
     private SprintViews views;
+    private SprintSnapshots snapshots;
 
     @BeforeEach
     void setUp() {
@@ -78,6 +93,7 @@ class SprintServicesTest {
         access = new WorkspaceAccess(workspaceRepository);
         lookup = new SprintLookup(access, sprintRepository);
         views = new SprintViews(boardRepository, storyRepository);
+        snapshots = new SprintSnapshots(storyRepository, snapshotRepository, views, clock, ZoneId.of("America/Sao_Paulo"));
         lenient().when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
         lenient().when(boardRepository.findByWorkspaceId(workspace.getId())).thenReturn(Optional.of(board));
         lenient().when(sprintRepository.save(any(Sprint.class))).thenAnswer(call -> call.getArgument(0));
@@ -127,7 +143,7 @@ class SprintServicesTest {
         Sprint other = Sprint.create(UUID.randomUUID(), "Other", null, START, END);
         when(sprintRepository.findById(other.getId())).thenReturn(Optional.of(other));
 
-        assertThatThrownBy(() -> new StartSprintService(lookup, sprintRepository, storyRepository, views)
+        assertThatThrownBy(() -> new StartSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
                 .execute(new SprintCommand(ownerId, workspace.getId(), other.getId())))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
@@ -182,7 +198,7 @@ class SprintServicesTest {
                 story(3, null, ColumnKind.TODO, sprint)
         ));
 
-        SprintView view = new StartSprintService(lookup, sprintRepository, storyRepository, views)
+        SprintView view = new StartSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
                 .execute(new SprintCommand(ownerId, workspace.getId(), sprint.getId()));
 
         assertThat(view.sprint().getState()).isEqualTo(SprintState.ACTIVE);
@@ -196,7 +212,7 @@ class SprintServicesTest {
         when(sprintRepository.findActive(workspace.getId()))
                 .thenReturn(Optional.of(Sprint.create(workspace.getId(), "Now", null, START, END)));
 
-        assertThatThrownBy(() -> new StartSprintService(lookup, sprintRepository, storyRepository, views)
+        assertThatThrownBy(() -> new StartSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
                 .execute(new SprintCommand(ownerId, workspace.getId(), sprint.getId())))
                 .isInstanceOf(ConflictException.class);
         assertThat(sprint.isPlanned()).isTrue();
@@ -204,7 +220,7 @@ class SprintServicesTest {
 
     @Test
     void anActiveOrClosedSprintCannotBeStarted() {
-        StartSprintService start = new StartSprintService(lookup, sprintRepository, storyRepository, views);
+        StartSprintService start = new StartSprintService(lookup, sprintRepository, storyRepository, views, snapshots);
 
         for (SprintState state : List.of(SprintState.ACTIVE, SprintState.CLOSED)) {
             Sprint sprint = sprint(state);
@@ -221,7 +237,7 @@ class SprintServicesTest {
         UserStory todo = story(3, 2, ColumnKind.TODO, sprint);
         when(storyRepository.findAllBySprintIds(anyList())).thenReturn(List.of(done, doing, todo));
 
-        SprintView view = new CloseSprintService(lookup, sprintRepository, storyRepository, views)
+        SprintView view = new CloseSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
                 .execute(new SprintCommand(ownerId, workspace.getId(), sprint.getId()));
 
         assertThat(view.sprint().getState()).isEqualTo(SprintState.CLOSED);
@@ -237,7 +253,7 @@ class SprintServicesTest {
     void onlyTheActiveSprintCanBeClosed() {
         Sprint sprint = sprint(SprintState.PLANNED);
 
-        assertThatThrownBy(() -> new CloseSprintService(lookup, sprintRepository, storyRepository, views)
+        assertThatThrownBy(() -> new CloseSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
                 .execute(new SprintCommand(ownerId, workspace.getId(), sprint.getId())))
                 .isInstanceOf(BusinessRuleException.class);
     }
@@ -299,5 +315,70 @@ class SprintServicesTest {
         assertThatThrownBy(() -> plan.execute(new PlanStoryCommand(memberId, workspace.getId(), "PRU-1", sprint.getId())))
                 .isInstanceOf(BusinessRuleException.class);
         verify(storyRepository, never()).save(any());
+    }
+
+    private SprintSnapshot recorded() {
+        ArgumentCaptor<SprintSnapshot> captor = ArgumentCaptor.forClass(SprintSnapshot.class);
+        verify(snapshotRepository).saveForDay(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    void startingRecordsTheFirstSnapshotOfTheBurndown() {
+        Sprint sprint = sprint(SprintState.PLANNED);
+        when(sprintRepository.findActive(workspace.getId())).thenReturn(Optional.empty());
+        when(storyRepository.findAllBySprintIds(anyList())).thenReturn(List.of(
+                story(1, 5, ColumnKind.TODO, sprint),
+                story(2, 3, ColumnKind.DONE, sprint),
+                story(3, null, ColumnKind.TODO, sprint)
+        ));
+
+        new StartSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
+                .execute(new SprintCommand(ownerId, workspace.getId(), sprint.getId()));
+
+        assertThat(recorded()).extracting(SprintSnapshot::sprintId, SprintSnapshot::totalPoints, SprintSnapshot::remainingPoints,
+                        SprintSnapshot::totalStories, SprintSnapshot::remainingStories, SprintSnapshot::recordedAt)
+                .containsExactly(sprint.getId(), 8, 5, 3, 2, clock.instant());
+    }
+
+    @Test
+    void closingRecordsTheLastSnapshotBeforeSendingStoriesBack() {
+        Sprint sprint = sprint(SprintState.ACTIVE);
+        when(storyRepository.findAllBySprintIds(anyList())).thenReturn(List.of(
+                story(1, 5, ColumnKind.DONE, sprint),
+                story(2, 3, ColumnKind.IN_PROGRESS, sprint),
+                story(3, 2, ColumnKind.TODO, sprint)
+        ));
+
+        new CloseSprintService(lookup, sprintRepository, storyRepository, views, snapshots)
+                .execute(new SprintCommand(ownerId, workspace.getId(), sprint.getId()));
+
+        assertThat(recorded()).extracting(SprintSnapshot::totalPoints, SprintSnapshot::remainingPoints, SprintSnapshot::remainingStories)
+                .containsExactly(10, 5, 2);
+        var order = inOrder(snapshotRepository, storyRepository);
+        order.verify(snapshotRepository).saveForDay(any());
+        order.verify(storyRepository).saveAll(anyList());
+    }
+
+    @Test
+    void aSnapshotBelongsToTheDayInTheConfiguredZone() {
+        Sprint sprint = Sprint.create(workspace.getId(), "Now", null, START, END);
+
+        snapshots.record(sprint);
+
+        assertThat(recorded().date()).isEqualTo(LocalDate.of(2026, 12, 2));
+    }
+
+    @Test
+    void theRecorderSnapshotsEveryActiveSprint() {
+        Sprint one = Sprint.create(workspace.getId(), "One", null, START, END);
+        one.start(0);
+        Sprint two = Sprint.create(UUID.randomUUID(), "Two", null, START, END);
+        two.start(0);
+        when(sprintRepository.findAllActive()).thenReturn(List.of(one, two));
+
+        new RecordSprintSnapshotsService(sprintRepository, snapshots).execute();
+
+        verify(snapshotRepository, times(2)).saveForDay(any());
     }
 }

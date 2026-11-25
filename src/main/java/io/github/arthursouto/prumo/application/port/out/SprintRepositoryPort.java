@@ -4,6 +4,7 @@ import io.github.arthursouto.prumo.application.port.out.query.SprintSearchCriter
 import io.github.arthursouto.prumo.application.port.out.result.PageResult;
 import io.github.arthursouto.prumo.domain.model.sprint.Sprint;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +17,8 @@ public interface SprintRepositoryPort {
     PageResult<Sprint> search(SprintSearchCriteria criteria);
 
     Optional<Sprint> findActive(UUID workspaceId);
+
+    List<Sprint> findAllActive();
 
     void delete(Sprint sprint);
 }
