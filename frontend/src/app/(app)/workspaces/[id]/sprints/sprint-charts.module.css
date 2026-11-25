@@ -194,3 +194,103 @@
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
   transform: translate(-50%, calc(-100% - 10px));
 }
+
+.chartNote {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: var(--font-size-sm);
+}
+
+.lineKey {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.lineKeyDashed {
+  height: 0;
+  background: none;
+  border-top: 2px dashed var(--text-subtlest);
+}
+
+.burndown {
+  display: block;
+  overflow: visible;
+  touch-action: none;
+}
+
+.grid {
+  stroke: var(--border-default);
+  stroke-width: 1;
+}
+
+.axis {
+  fill: var(--text-subtlest);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.idealLine {
+  fill: none;
+  stroke: var(--text-subtlest);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.seriesLine {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.endLabel {
+  fill: var(--text-default);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.todayLine {
+  stroke: var(--text-subtle);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.todayText {
+  fill: var(--text-subtle);
+  font-size: 11px;
+}
+
+.crosshair {
+  stroke: var(--border-input);
+  stroke-width: 1;
+}
+
+.marker {
+  stroke: var(--surface-card);
+  stroke-width: 2;
+}
+
+.dataTable summary {
+  width: fit-content;
+  color: var(--text-link);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.dataTable[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+.dataTable thead th {
+  color: var(--text-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.dataTable th:first-child {
+  padding-left: 0;
+}

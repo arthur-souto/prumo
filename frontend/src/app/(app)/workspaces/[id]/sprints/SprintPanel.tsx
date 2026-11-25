@@ -14,6 +14,7 @@ import { dateLocale } from "@/i18n/core";
 import type { Column, Member, Sprint, SprintState, Story } from "@/lib/board-types";
 import { formatDate } from "@/lib/workspace-types";
 import { PriorityBadge } from "../board/PriorityBadge";
+import { BurndownChart } from "./BurndownChart";
 import { AssigneeChart, StatusChart } from "./SprintCharts";
 import { localToday, percent, sprintMetrics } from "./sprint-metrics";
 import charts from "./sprint-charts.module.css";
@@ -184,6 +185,16 @@ export function SprintPanel({
           </div>
         ) : null}
       </div>
+
+      {sprint.state !== "PLANNED" ? (
+        <div className={styles.burndownBox}>
+          <BurndownChart
+            workspaceId={workspaceId}
+            sprint={sprint}
+            refreshKey={`${sprint.state}:${metrics.totalPoints}:${metrics.donePoints}:${metrics.stories.length}`}
+          />
+        </div>
+      ) : null}
 
       {metrics.stories.length === 0 ? (
         <EmptyState

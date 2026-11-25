@@ -152,3 +152,23 @@ export type Comment = {
   /** True when the caller wrote it, and so can edit or delete it. */
   mine: boolean;
 };
+
+export type BurndownDay = {
+  date: string;
+  totalPoints: number | null;
+  remainingPoints: number | null;
+  totalStories: number | null;
+  remainingStories: number | null;
+  idealPoints: number;
+};
+
+export type SprintBurndown = {
+  sprintId: string;
+  state: SprintState;
+  startDate: string;
+  endDate: string;
+  committedPoints: number | null;
+  completedPoints: number | null;
+  baselinePoints: number;
+  burndown: BurndownDay[];
+};
