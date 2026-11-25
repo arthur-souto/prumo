@@ -45,6 +45,7 @@ import io.github.arthursouto.prumo.application.port.in.ListWorkspaceMembersUseCa
 import io.github.arthursouto.prumo.application.port.in.ListWorkspacesUseCase;
 import io.github.arthursouto.prumo.application.port.in.MoveStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.PlanStoryUseCase;
+import io.github.arthursouto.prumo.application.port.in.RecordSprintSnapshotsUseCase;
 import io.github.arthursouto.prumo.application.port.in.RefreshTokensUseCase;
 import io.github.arthursouto.prumo.application.port.in.RegisterUserUseCase;
 import io.github.arthursouto.prumo.application.port.in.RemoveGithubTokenUseCase;
@@ -77,6 +78,7 @@ import io.github.arthursouto.prumo.application.port.out.PasswordHasherPort;
 import io.github.arthursouto.prumo.application.port.out.RefreshTokenCodecPort;
 import io.github.arthursouto.prumo.application.port.out.RefreshTokenRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.SprintRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.SprintSnapshotRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.SubtaskRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.TokenCipherPort;
@@ -134,6 +136,7 @@ import io.github.arthursouto.prumo.application.usecase.ListWorkspacesService;
 import io.github.arthursouto.prumo.application.usecase.MoveStoryService;
 import io.github.arthursouto.prumo.application.usecase.PlanStoryService;
 import io.github.arthursouto.prumo.application.usecase.PullRequestSyncer;
+import io.github.arthursouto.prumo.application.usecase.RecordSprintSnapshotsService;
 import io.github.arthursouto.prumo.application.usecase.RefreshTokensService;
 import io.github.arthursouto.prumo.application.usecase.RegisterUserService;
 import io.github.arthursouto.prumo.application.usecase.RemoveGithubTokenService;
@@ -144,6 +147,7 @@ import io.github.arthursouto.prumo.application.usecase.RevokeRefreshTokenService
 import io.github.arthursouto.prumo.application.usecase.SaveGithubTokenService;
 import io.github.arthursouto.prumo.application.usecase.SetChecklistItemDoneService;
 import io.github.arthursouto.prumo.application.usecase.SprintLookup;
+import io.github.arthursouto.prumo.application.usecase.SprintSnapshots;
 import io.github.arthursouto.prumo.application.usecase.SprintViews;
 import io.github.arthursouto.prumo.application.usecase.StartOAuthLoginService;
 import io.github.arthursouto.prumo.application.usecase.StartSprintService;
@@ -716,16 +720,32 @@ public class UseCaseConfig {
     StartSprintUseCase startSprintUseCase(SprintLookup sprints,
                                           SprintRepositoryPort sprintRepository,
                                           StoryRepositoryPort storyRepository,
-                                          SprintViews views) {
-        return new StartSprintService(sprints, sprintRepository, storyRepository, views);
+                                          SprintViews views,
+                                          SprintSnapshots snapshots) {
+        return new StartSprintService(sprints, sprintRepository, storyRepository, views, snapshots);
     }
 
     @Bean
     CloseSprintUseCase closeSprintUseCase(SprintLookup sprints,
                                           SprintRepositoryPort sprintRepository,
                                           StoryRepositoryPort storyRepository,
-                                          SprintViews views) {
-        return new CloseSprintService(sprints, sprintRepository, storyRepository, views);
+                                          SprintViews views,
+                                          SprintSnapshots snapshots) {
+        return new CloseSprintService(sprints, sprintRepository, storyRepository, views, snapshots);
+    }
+
+    @Bean
+    SprintSnapshots sprintSnapshots(StoryRepositoryPort storyRepository,
+                                    SprintSnapshotRepositoryPort snapshotRepository,
+                                    SprintViews views,
+                                    Clock clock,
+                                    SprintProperties properties) {
+        return new SprintSnapshots(storyRepository, snapshotRepository, views, clock, properties.timeZone());
+    }
+
+    @Bean
+    RecordSprintSnapshotsUseCase recordSprintSnapshotsUseCase(SprintRepositoryPort sprintRepository, SprintSnapshots snapshots) {
+        return new RecordSprintSnapshotsService(sprintRepository, snapshots);
     }
 
     @Bean

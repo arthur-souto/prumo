@@ -43,6 +43,14 @@ app:
       enabled: ${GITHUB_POLLING_ENABLED:true}
       interval: ${GITHUB_POLLING_INTERVAL:60s}
 
+  sprints:
+    # The calendar day of the burndown: a snapshot belongs to the day in this zone.
+    time-zone: ${SPRINT_TIME_ZONE:America/Sao_Paulo}
+    snapshots:
+      enabled: ${SPRINT_SNAPSHOTS_ENABLED:true}
+      interval: ${SPRINT_SNAPSHOTS_INTERVAL:1h}
+      initial-delay: ${SPRINT_SNAPSHOTS_INITIAL_DELAY:30s}
+
 server:
   # Local only by default. The front end reaches the backend from the same machine; use 0.0.0.0 only if something else must.
   address: ${SERVER_ADDRESS:127.0.0.1}
