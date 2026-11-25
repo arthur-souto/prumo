@@ -294,3 +294,9 @@
 .dataTable th:first-child {
   padding-left: 0;
 }
+
+.barValue {
+  fill: var(--text-subtle);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}

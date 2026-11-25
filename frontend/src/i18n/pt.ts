@@ -222,6 +222,15 @@ export const pt: Messages = {
     deleteText: "As histórias dela voltam para o backlog. Isso não pode ser desfeito.",
     sprint: "Sprint",
     backlog: "Backlog",
+    velocity: {
+      title: "Velocity",
+      average: "Média de {count} pts concluídos",
+      committed: "Comprometidos",
+      completed: "Concluídos",
+      averageKey: "Média",
+      sprint: "Sprint",
+      summary: "Velocity das últimas {count} sprints, com média de {average} pontos concluídos",
+    },
     burndown: {
       title: "Burndown",
       remaining: "Restantes",
@@ -240,6 +249,7 @@ export const pt: Messages = {
     showMore: "Mostrar mais {count}",
     closedSprints: "Sprints concluídas",
     completedOf: "{completed} de {committed} pts concluídos",
+    completedOnly: "{completed} pts concluídos",
     loadMore: "Carregar mais",
     searchIssues: "Buscar histórias",
     emptySprint: "Planeje a sprint arrastando histórias do backlog para cá.",

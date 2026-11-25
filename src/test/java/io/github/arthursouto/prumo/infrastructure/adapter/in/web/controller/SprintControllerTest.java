@@ -16,6 +16,7 @@ import io.github.arthursouto.prumo.application.port.in.command.GetVelocityQuery;
 import io.github.arthursouto.prumo.application.port.in.result.BurndownDay;
 import io.github.arthursouto.prumo.application.port.in.result.SprintMetrics;
 import io.github.arthursouto.prumo.application.port.in.result.Velocity;
+import io.github.arthursouto.prumo.application.port.in.result.VelocitySprint;
 import io.github.arthursouto.prumo.application.port.in.command.ListSprintsQuery;
 import io.github.arthursouto.prumo.application.port.in.command.PlanStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SprintCommand;
@@ -250,7 +251,7 @@ class SprintControllerTest {
         Sprint sprint = sprint();
         sprint.start(10);
         sprint.close(8);
-        when(velocity.execute(new GetVelocityQuery(userId, workspaceId, 4))).thenReturn(new Velocity(List.of(sprint), 8.0, 10.0));
+        when(velocity.execute(new GetVelocityQuery(userId, workspaceId, 4))).thenReturn(new Velocity(List.of(new VelocitySprint(sprint, 10)), 8.0, 10.0));
 
         mockMvc.perform(get(base + "/sprints/velocity").principal(principal()).param("limit", "4"))
                 .andExpect(status().isOk())

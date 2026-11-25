@@ -21,6 +21,7 @@ import { replaceSearchParams } from "@/lib/url-state";
 import { formatDate } from "@/lib/workspace-types";
 import { StoryDrawer } from "../board/StoryDrawer";
 import { ClosedSprints } from "./ClosedSprints";
+import { VelocityChart } from "./VelocityChart";
 import { IssueContent } from "./IssueRow";
 import { PlanSection } from "./PlanSection";
 import { BACKLOG, groupOf } from "./planning";
@@ -343,7 +344,7 @@ export function PlanningView({ workspaceId, board, members, repositories: initia
         ) : null}
       </div>
 
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+      <DndContext id={`planning-${workspaceId}`} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
         <div className={styles.sections}>
           {sprints.map((sprint) => (
             <PlanSection
@@ -406,6 +407,12 @@ export function PlanningView({ workspaceId, board, members, repositories: initia
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <VelocityChart
+        workspaceId={workspaceId}
+        version={closedVersion}
+        onOpen={(sprintId) => replaceSearchParams((search) => search.set("sprint", sprintId))}
+      />
 
       <ClosedSprints workspaceId={workspaceId} version={closedVersion} onOpen={openReport} />
 

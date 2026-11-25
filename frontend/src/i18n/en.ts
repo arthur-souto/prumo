@@ -220,6 +220,15 @@ export const en = {
     deleteText: "Its stories go back to the backlog. This cannot be undone.",
     sprint: "Sprint",
     backlog: "Backlog",
+    velocity: {
+      title: "Velocity",
+      average: "Average of {count} pts completed",
+      committed: "Committed",
+      completed: "Completed",
+      averageKey: "Average",
+      sprint: "Sprint",
+      summary: "Velocity of the last {count} sprints, averaging {average} points completed",
+    },
     burndown: {
       title: "Burndown",
       remaining: "Remaining",
@@ -238,6 +247,7 @@ export const en = {
     showMore: "Show {count} more",
     closedSprints: "Completed sprints",
     completedOf: "{completed} of {committed} pts completed",
+    completedOnly: "{completed} pts completed",
     loadMore: "Load more",
     searchIssues: "Search stories",
     emptySprint: "Plan a sprint by dragging stories here from the backlog.",
