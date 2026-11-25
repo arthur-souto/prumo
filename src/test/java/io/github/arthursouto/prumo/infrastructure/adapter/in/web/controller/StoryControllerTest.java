@@ -193,9 +193,10 @@ class StoryControllerTest {
     void listPassesTheFiltersAndReturnsAPage() throws Exception {
         UUID column = UUID.randomUUID();
         UUID assignee = UUID.randomUUID();
+        UUID sprint = UUID.randomUUID();
         when(listStories.execute(new ListStoriesQuery(
                 userId, workspaceId, "reset", List.of("api", "web"), List.of(StoryPriority.HIGH, StoryPriority.URGENT),
-                List.of(column), List.of(assignee), true, StorySort.UPDATED_AT, SortDirection.ASC, 1, 10
+                List.of(column), List.of(assignee), true, List.of(sprint), true, StorySort.UPDATED_AT, SortDirection.ASC, 1, 10
         ))).thenReturn(new PageResult<>(List.of(story), 1, 10, 11));
 
         mockMvc.perform(get(base).principal(principal())
@@ -205,6 +206,8 @@ class StoryControllerTest {
                         .param("columnId", column.toString())
                         .param("assigneeId", assignee.toString())
                         .param("unassigned", "true")
+                        .param("sprintId", sprint.toString())
+                        .param("noSprint", "true")
                         .param("sort", "UPDATED_AT")
                         .param("direction", "ASC")
                         .param("page", "1")
@@ -220,7 +223,7 @@ class StoryControllerTest {
     @Test
     void listWithoutParametersLeavesTheDefaultsToTheUseCase() throws Exception {
         when(listStories.execute(new ListStoriesQuery(
-                userId, workspaceId, null, null, null, null, null, null, null, null, null, null
+                userId, workspaceId, null, null, null, null, null, null, null, null, null, null, null, null
         ))).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
 
         mockMvc.perform(get(base).principal(principal()))

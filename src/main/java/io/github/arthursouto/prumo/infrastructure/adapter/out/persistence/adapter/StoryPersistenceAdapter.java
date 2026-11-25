@@ -103,6 +103,15 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public List<UserStory> findAllBySprintIds(Collection<UUID> sprintIds) {
+        if (sprintIds.isEmpty()) {
+            return List.of();
+        }
+        return hydrate(storyRepository.findBySprintIdIn(sprintIds));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PageResult<UserStory> search(StorySearchCriteria criteria) {
         List<UserStoryEntity> page = searchRepository.find(criteria);
 

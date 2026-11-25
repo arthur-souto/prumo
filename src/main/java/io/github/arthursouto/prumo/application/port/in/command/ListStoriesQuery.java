@@ -16,6 +16,8 @@ public record ListStoriesQuery(
         List<UUID> columnIds,
         List<UUID> assigneeIds,
         Boolean unassigned,
+        List<UUID> sprintIds,
+        Boolean withoutSprint,
         StorySort sort,
         SortDirection direction,
         Integer page,

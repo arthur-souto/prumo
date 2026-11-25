@@ -47,3 +47,30 @@
   color: var(--text-subtlest);
   font-size: var(--font-size-sm);
 }
+
+.divided {
+  position: relative;
+  margin-top: var(--space-2);
+}
+
+.divided::before {
+  position: absolute;
+  top: calc(var(--space-1) * -1 - 1px);
+  right: var(--space-2);
+  left: var(--space-2);
+  height: var(--border-width);
+  content: "";
+  background: var(--border-default);
+}
+
+.sprintIcon {
+  flex-shrink: 0;
+  color: var(--text-link);
+}
+
+.kind {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--text-subtlest);
+  font-size: var(--font-size-xs);
+}

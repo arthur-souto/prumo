@@ -2,11 +2,12 @@ import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 import styles from "./workspace.module.css";
 
-export type WorkspaceSection = "board" | "backlog" | "repositories" | "workspaceSettings";
+export type WorkspaceSection = "board" | "backlog" | "sprints" | "repositories" | "workspaceSettings";
 
 const TITLES = {
   board: "nav.board",
   backlog: "nav.backlog",
+  sprints: "nav.sprints",
   repositories: "nav.repositories",
   workspaceSettings: "nav.workspaceSettings",
 } as const;

@@ -109,6 +109,17 @@ public class UserStorySearchRepository {
             predicates.add(builder.or(assignee.toArray(Predicate[]::new)));
         }
 
+        List<Predicate> sprint = new ArrayList<>();
+        if (!criteria.sprintIds().isEmpty()) {
+            sprint.add(story.get("sprintId").in(criteria.sprintIds()));
+        }
+        if (criteria.withoutSprint()) {
+            sprint.add(builder.isNull(story.get("sprintId")));
+        }
+        if (!sprint.isEmpty()) {
+            predicates.add(builder.or(sprint.toArray(Predicate[]::new)));
+        }
+
         return predicates.toArray(Predicate[]::new);
     }
 

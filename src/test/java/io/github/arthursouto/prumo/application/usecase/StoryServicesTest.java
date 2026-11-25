@@ -167,14 +167,14 @@ class StoryServicesTest {
 
         assertThat(service.execute(new ListStoriesQuery(
                 userId, workspace.getId(), "  OAuth  ", List.of(" Frontend ", "frontend", " "),
-                List.of(StoryPriority.HIGH, StoryPriority.HIGH), List.of(column), null, null, null, null, null, null
+                List.of(StoryPriority.HIGH, StoryPriority.HIGH), List.of(column), null, null, null, null, null, null, null, null
         ))).isSameAs(page);
 
         ArgumentCaptor<StorySearchCriteria> criteria = ArgumentCaptor.forClass(StorySearchCriteria.class);
         verify(storyRepository).search(criteria.capture());
         assertThat(criteria.getValue()).isEqualTo(new StorySearchCriteria(
                 workspace.getId(), "oauth", Set.of("frontend"), Set.of(StoryPriority.HIGH), Set.of(column), Set.of(),
-                false, StorySort.NUMBER, SortDirection.DESC, 0, 20
+                false, Set.of(), false, StorySort.NUMBER, SortDirection.DESC, 0, 20
         ));
     }
 
@@ -185,7 +185,7 @@ class StoryServicesTest {
         ListStoriesService service = new ListStoriesService(access, storyRepository);
 
         service.execute(new ListStoriesQuery(
-                userId, workspace.getId(), "   ", null, null, null, null, true, StorySort.PRIORITY, SortDirection.ASC, 2, 5
+                userId, workspace.getId(), "   ", null, null, null, null, true, null, null, StorySort.PRIORITY, SortDirection.ASC, 2, 5
         ));
 
         ArgumentCaptor<StorySearchCriteria> criteria = ArgumentCaptor.forClass(StorySearchCriteria.class);

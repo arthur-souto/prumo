@@ -62,6 +62,9 @@ public class UserStoryEntity {
     @Column(name = "assignee_id")
     private UUID assigneeId;
 
+    @Column(name = "sprint_id")
+    private UUID sprintId;
+
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

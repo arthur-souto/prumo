@@ -1,17 +1,18 @@
 "use client";
 
-import { UserX, X } from "lucide-react";
+import { Inbox, UserX, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import { useT } from "@/i18n/client";
-import { PRIORITIES, type Column, type Member, type Priority, type Story } from "@/lib/board-types";
+import { PRIORITIES, type Column, type Member, type Priority, type Sprint, type Story } from "@/lib/board-types";
 import { EMPTY_STORY_FILTERS, hasStoryFilters, toggle, type StoryFilters } from "@/lib/story-filters";
 import { StorySearchInput } from "./StorySearchInput";
 import styles from "./story-filter-bar.module.css";
 
 const UNASSIGNED = "__unassigned";
+const BACKLOG = "__backlog";
 
 type StoryFilterBarProps = {
   filters: StoryFilters;
@@ -19,15 +20,25 @@ type StoryFilterBarProps = {
   labels: string[];
   members: Member[];
   columns?: Column[];
+  sprints?: Sprint[];
   workspaceId?: string;
   onPick?: (story: Story) => void;
   children?: ReactNode;
 };
 
-export function StoryFilterBar({ filters, onChange, labels, members, columns, workspaceId, onPick, children }: StoryFilterBarProps) {
+export function StoryFilterBar({ filters, onChange, labels, members, columns, sprints, workspaceId, onPick, children }: StoryFilterBarProps) {
   const t = useT();
   const clear = t("filters.clear");
   const assignees = [...filters.assigneeIds, ...(filters.unassigned ? [UNASSIGNED] : [])];
+  const plannedIn = [...filters.sprintIds, ...(filters.noSprint ? [BACKLOG] : [])];
+
+  function toggleSprint(value: string) {
+    if (value === BACKLOG) {
+      onChange({ ...filters, noSprint: !filters.noSprint });
+    } else {
+      onChange({ ...filters, sprintIds: toggle(filters.sprintIds, value) });
+    }
+  }
 
   function toggleAssignee(value: string) {
     if (value === UNASSIGNED) {
@@ -53,6 +64,23 @@ export function StoryFilterBar({ filters, onChange, labels, members, columns, wo
           selected={filters.columnIds}
           onToggle={(value) => onChange({ ...filters, columnIds: toggle(filters.columnIds, value) })}
           onClear={() => onChange({ ...filters, columnIds: [] })}
+          clearLabel={clear}
+        />
+      ) : null}
+
+      {sprints ? (
+        <FilterMenu
+          label={t("sprints.sprint")}
+          options={[
+            { value: BACKLOG, label: t("sprints.backlog"), icon: <Inbox size={16} aria-hidden="true" /> },
+            ...sprints.map((sprint) => ({
+              value: sprint.id,
+              label: sprint.state === "PLANNED" ? sprint.name : `${sprint.name} · ${t(`sprints.states.${sprint.state}`)}`,
+            })),
+          ]}
+          selected={plannedIn}
+          onToggle={toggleSprint}
+          onClear={() => onChange({ ...filters, sprintIds: [], noSprint: false })}
           clearLabel={clear}
         />
       ) : null}

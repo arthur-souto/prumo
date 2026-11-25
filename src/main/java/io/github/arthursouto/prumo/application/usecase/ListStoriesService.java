@@ -40,6 +40,8 @@ public class ListStoriesService implements ListStoriesUseCase {
                 distinct(query.columnIds()),
                 distinct(query.assigneeIds()),
                 Boolean.TRUE.equals(query.unassigned()),
+                distinct(query.sprintIds()),
+                Boolean.TRUE.equals(query.withoutSprint()),
                 query.sort() == null ? StorySort.NUMBER : query.sort(),
                 query.direction() == null ? SortDirection.DESC : query.direction(),
                 query.page() == null ? 0 : query.page(),

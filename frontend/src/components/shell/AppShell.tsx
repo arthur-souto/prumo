@@ -40,7 +40,7 @@ export function AppShell({ user, workspaces, children }: AppShellProps) {
     const section = match[2];
     /* A subtask opens from the board, so it keeps the board entry highlighted (but, unlike the board, its page scrolls). */
     const key: NavKey =
-      section === "board" || section === "backlog" || section === "repositories"
+      section === "board" || section === "backlog" || section === "sprints" || section === "repositories"
         ? section
         : section === "subtasks"
           ? "board"

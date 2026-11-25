@@ -13,7 +13,7 @@ import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { errorMessage, useT } from "@/i18n/client";
-import { PRIORITIES, type Board, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
+import { PRIORITIES, type Board, type Member, type Priority, type Repository, type Sprint, type Story } from "@/lib/board-types";
 import { allLabels } from "@/lib/board-utils";
 import { sendJson } from "@/lib/client";
 import {
@@ -40,10 +40,11 @@ type BacklogViewProps = {
   board: Board;
   repositories: Repository[];
   members: Member[];
+  sprints: Sprint[];
   hasGithubToken: boolean;
 };
 
-export function BacklogView({ workspaceId, board, repositories: initialRepositories, members, hasGithubToken }: BacklogViewProps) {
+export function BacklogView({ workspaceId, board, repositories: initialRepositories, members, sprints, hasGithubToken }: BacklogViewProps) {
   const t = useT();
   const toast = useToast();
   const base = `/api/workspaces/${workspaceId}`;
@@ -198,6 +199,18 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
     return true;
   }
 
+  async function planInto(story: Story, sprintId: string) {
+    const result = await sendJson<Story>(`${base}/stories/${story.key}/sprint`, "PUT", { sprintId: sprintId === "" ? null : sprintId });
+
+    if (!result.ok || !result.data) {
+      toast({ tone: "danger", title: errorMessage(t, result.code, result.reason) });
+      return false;
+    }
+
+    upsert(result.data);
+    return true;
+  }
+
   async function inline(story: Story, action: () => Promise<boolean>) {
     setBusyIds((current) => new Set(current).add(story.id));
     await action();
@@ -279,7 +292,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
 
   return (
     <div className={styles.view}>
-      <StoryFilterBar filters={filters} onChange={setFilters} labels={labels} members={members} columns={columns} workspaceId={workspaceId} onPick={setOpened}>
+      <StoryFilterBar filters={filters} onChange={setFilters} labels={labels} members={members} columns={columns} sprints={sprints} workspaceId={workspaceId} onPick={setOpened}>
         <Select
           compact
           variant="quiet"
@@ -331,6 +344,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
                 <th scope="col">{t("backlog.key")}</th>
                 <th scope="col">{t("backlog.title")}</th>
                 <th scope="col">{t("backlog.status")}</th>
+                <th scope="col">{t("sprints.sprint")}</th>
                 <th scope="col">{t("backlog.priority")}</th>
                 <th scope="col" className={styles.numeric}>
                   {t("backlog.points")}
@@ -381,6 +395,25 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
                             {column.name}
                           </option>
                         ))}
+                      </Select>
+                    </td>
+                    <td>
+                      <Select
+                        compact
+                        variant="quiet"
+                        value={story.sprintId ?? ""}
+                        disabled={busy}
+                        aria-label={`${t("sprints.sprint")}: ${story.key}`}
+                        onChange={(event) => void inline(story, () => planInto(story, event.target.value))}
+                      >
+                        <option value="">{t("sprints.backlog")}</option>
+                        {sprints
+                          .filter((sprint) => sprint.state !== "CLOSED" || sprint.id === story.sprintId)
+                          .map((sprint) => (
+                            <option key={sprint.id} value={sprint.id} disabled={sprint.state === "CLOSED"}>
+                              {sprint.name}
+                            </option>
+                          ))}
                       </Select>
                     </td>
                     <td>
@@ -488,6 +521,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
         <StoryDrawer
           key={open.id}
           members={members}
+          sprints={sprints}
           workspaceId={workspaceId}
           story={open}
           columns={columns}

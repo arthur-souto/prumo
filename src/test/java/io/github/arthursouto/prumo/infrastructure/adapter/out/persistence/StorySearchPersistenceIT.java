@@ -87,7 +87,7 @@ class StorySearchPersistenceIT {
     }
 
     private StorySearchCriteria criteria() {
-        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false,
+        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false, Set.of(), false,
                 StorySort.NUMBER, SortDirection.DESC, 0, 20);
     }
 
@@ -151,7 +151,7 @@ class StorySearchPersistenceIT {
 
         StorySearchCriteria criteria = criteria();
         PageResult<UserStory> page = stories.search(new StorySearchCriteria(
-                workspaceId, null, Set.of("frontend", "backend"), Set.of(), Set.of(), Set.of(), false,
+                workspaceId, null, Set.of("frontend", "backend"), Set.of(), Set.of(), Set.of(), false, Set.of(), false,
                 criteria.sort(), criteria.direction(), 0, 20
         ));
 
@@ -169,19 +169,19 @@ class StorySearchPersistenceIT {
         UUID done = board.ofKind(ColumnKind.DONE).orElseThrow().getId();
 
         assertThat(numbers(stories.search(new StorySearchCriteria(
-                workspaceId, null, Set.of(), Set.of(StoryPriority.HIGH, StoryPriority.URGENT), Set.of(todo), Set.of(), false,
+                workspaceId, null, Set.of(), Set.of(StoryPriority.HIGH, StoryPriority.URGENT), Set.of(todo), Set.of(), false, Set.of(), false,
                 StorySort.NUMBER, SortDirection.DESC, 0, 20
         )))).containsExactly(2, 1);
         assertThat(numbers(stories.search(new StorySearchCriteria(
-                workspaceId, null, Set.of(), Set.of(), Set.of(done), Set.of(), false,
+                workspaceId, null, Set.of(), Set.of(), Set.of(done), Set.of(), false, Set.of(), false,
                 StorySort.NUMBER, SortDirection.DESC, 0, 20
         )))).containsExactly(3);
         assertThat(numbers(stories.search(new StorySearchCriteria(
-                workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(member), false,
+                workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(member), false, Set.of(), false,
                 StorySort.NUMBER, SortDirection.DESC, 0, 20
         )))).containsExactly(1);
         assertThat(numbers(stories.search(new StorySearchCriteria(
-                workspaceId, null, Set.of(), Set.of(StoryPriority.HIGH), Set.of(), Set.of(member), true,
+                workspaceId, null, Set.of(), Set.of(StoryPriority.HIGH), Set.of(), Set.of(member), true, Set.of(), false,
                 StorySort.NUMBER, SortDirection.DESC, 0, 20
         )))).containsExactly(2, 1);
     }
@@ -229,6 +229,22 @@ class StorySearchPersistenceIT {
     }
 
     @Test
+    void filtersBySprintAndByTheBacklog() {
+        UUID sprint = UUID.randomUUID();
+        jdbc.update("INSERT INTO sprints (id, workspace_id, name, start_date, end_date, state, created_at, updated_at) "
+                + "VALUES (?, ?, 'S', current_date, current_date, 'PLANNED', now(), now())", sprint, workspaceId);
+        story(1, "A", null, StoryPriority.LOW, ColumnKind.TODO);
+        story(2, "B", null, StoryPriority.LOW, ColumnKind.TODO);
+        story(3, "C", null, StoryPriority.LOW, ColumnKind.TODO);
+        jdbc.update("UPDATE user_stories SET sprint_id = ? WHERE workspace_id = ? AND story_number IN (1, 2)", sprint, workspaceId);
+
+        assertThat(numbers(stories.search(inSprint(Set.of(sprint), false)))).containsExactly(2, 1);
+        assertThat(numbers(stories.search(inSprint(Set.of(), true)))).containsExactly(3);
+        assertThat(numbers(stories.search(inSprint(Set.of(sprint), true)))).containsExactly(3, 2, 1);
+        assertThat(numbers(stories.search(inSprint(Set.of(UUID.randomUUID()), false)))).isEmpty();
+    }
+
+    @Test
     void theTextSearchCanUseTheTrigramIndexes() {
         List<String> plan = jdbc.execute((Connection connection) -> {
             try (Statement statement = connection.createStatement()) {
@@ -255,15 +271,21 @@ class StorySearchPersistenceIT {
 
     private StorySearchCriteria with(StorySearchCriteria base, String text) {
         return new StorySearchCriteria(base.workspaceId(), text, base.labels(), base.priorities(), base.columnIds(),
-                base.assigneeIds(), base.unassigned(), base.sort(), base.direction(), base.page(), base.size());
+                base.assigneeIds(), base.unassigned(), base.sprintIds(), base.withoutSprint(), base.sort(), base.direction(),
+                base.page(), base.size());
+    }
+
+    private StorySearchCriteria inSprint(Set<UUID> sprintIds, boolean withoutSprint) {
+        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false, sprintIds, withoutSprint,
+                StorySort.NUMBER, SortDirection.DESC, 0, 20);
     }
 
     private StorySearchCriteria sorted(StorySort sort, SortDirection direction) {
-        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false, sort, direction, 0, 20);
+        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false, Set.of(), false, sort, direction, 0, 20);
     }
 
     private StorySearchCriteria page(int page, int size) {
-        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false,
+        return new StorySearchCriteria(workspaceId, null, Set.of(), Set.of(), Set.of(), Set.of(), false, Set.of(), false,
                 StorySort.NUMBER, SortDirection.DESC, page, size);
     }
 }

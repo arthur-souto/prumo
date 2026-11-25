@@ -4,6 +4,7 @@ import {
   ChevronsUpDown,
   Columns3,
   GitBranch,
+  IterationCw,
   LayoutGrid,
   ListChecks,
   PanelLeftClose,
@@ -29,7 +30,7 @@ import { WorkspaceIcon } from "@/components/ui/WorkspaceIcon";
 import { useT } from "@/i18n/client";
 import styles from "./shell.module.css";
 
-export type NavKey = "home" | "settings" | "board" | "backlog" | "repositories" | "workspaceSettings";
+export type NavKey = "home" | "settings" | "board" | "backlog" | "sprints" | "repositories" | "workspaceSettings";
 export type WorkspaceRef = { id: string; name: string };
 
 type SidebarProps = {
@@ -52,6 +53,7 @@ export function Sidebar({ workspaces, workspace, active, collapsed, onToggle, on
     ? [
         { key: "board", href: `/workspaces/${workspace.id}/board`, label: t("nav.board"), icon: <Columns3 size={size} aria-hidden="true" /> },
         { key: "backlog", href: `/workspaces/${workspace.id}/backlog`, label: t("nav.backlog"), icon: <ListChecks size={size} aria-hidden="true" /> },
+        { key: "sprints", href: `/workspaces/${workspace.id}/sprints`, label: t("nav.sprints"), icon: <IterationCw size={size} aria-hidden="true" /> },
         { key: "repositories", href: `/workspaces/${workspace.id}/repositories`, label: t("nav.repositories"), icon: <GitBranch size={size} aria-hidden="true" /> },
         { key: "workspaceSettings", href: `/workspaces/${workspace.id}`, label: t("nav.workspaceSettings"), icon: <SlidersHorizontal size={size} aria-hidden="true" /> },
       ]

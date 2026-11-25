@@ -35,6 +35,7 @@ public final class StoryMapper {
         entity.setSortRank(story.getRank());
         entity.setRepositoryId(story.getRepositoryId());
         entity.setAssigneeId(story.getAssigneeId());
+        entity.setSprintId(story.getSprintId());
         entity.setCreatedAt(story.getCreatedAt());
         entity.setUpdatedAt(story.getUpdatedAt());
         return entity;
@@ -118,7 +119,7 @@ public final class StoryMapper {
                         .toList(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
-        ).withAssignee(entity.getAssigneeId()).withColumnSource(entity.getColumnSource());
+        ).withAssignee(entity.getAssigneeId()).withSprint(entity.getSprintId()).withColumnSource(entity.getColumnSource());
     }
 
     private static void append(List<StoryChecklistItemEntity> target, UUID storyId, String kind, List<ChecklistItem> items) {

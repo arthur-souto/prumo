@@ -24,12 +24,13 @@ import { Modal } from "@/components/ui/Modal";
 import { TextField } from "@/components/ui/TextField";
 import { errorMessage, githubReason, useT } from "@/i18n/client";
 import { allLabels, buildLayout, neighbours, type Layout } from "@/lib/board-utils";
-import { PRIORITIES, type Board, type Column, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
+import { PRIORITIES, type Board, type Column, type Member, type Priority, type Repository, type Sprint, type Story } from "@/lib/board-types";
 import { hasStoryFilters, matchesStoryFilters } from "@/lib/story-filters";
 import { sendJson } from "@/lib/client";
 import { replaceSearchParams } from "@/lib/url-state";
 import modal from "../../../modal-form.module.css";
 import settings from "../workspace.module.css";
+import { ActiveSprintBar } from "./ActiveSprintBar";
 import { BoardColumn } from "./BoardColumn";
 import { CardContent } from "./StoryCard";
 import { StoryDrawer } from "./StoryDrawer";
@@ -40,6 +41,7 @@ import styles from "./board.module.css";
 
 type BoardViewProps = {
   members: Member[];
+  sprints: Sprint[];
   workspaceId: string;
   canManageBoard: boolean;
   initialBoard: Board;
@@ -59,10 +61,13 @@ export function BoardView({
   initialBoard,
   initialRepositories,
   members,
+  sprints,
   hasGithubToken,
 }: BoardViewProps) {
   const t = useT();
   const base = `/api/workspaces/${workspaceId}`;
+  const activeSprint = sprints.find((sprint) => sprint.state === "ACTIVE");
+  const sprintsById = useMemo(() => new Map(sprints.map((sprint) => [sprint.id, sprint])), [sprints]);
   const [columns, setColumns] = useState(initialBoard.columns);
   const [stories, setStories] = useState<Record<string, Story>>(() =>
     Object.fromEntries(initialBoard.stories.map((story) => [story.id, story])),
@@ -383,12 +388,14 @@ export function BoardView({
 
   return (
     <div className={styles.wrapper}>
+      {activeSprint ? <ActiveSprintBar workspaceId={workspaceId} sprint={activeSprint} /> : null}
       <div className={styles.toolbar}>
         <StoryFilterBar
           filters={filters}
           onChange={setFilters}
           labels={labels}
           members={members}
+          sprints={sprints}
           workspaceId={workspaceId}
           onPick={openPicked}
         />
@@ -433,7 +440,8 @@ export function BoardView({
 
             return (
               <BoardColumn
-              members={members}
+                members={members}
+                sprints={sprintsById}
                 key={column.id}
                 column={column}
                 stories={visible.filter((story) => matchesStoryFilters(story, filters))}
@@ -456,7 +464,7 @@ export function BoardView({
         <DragOverlay>
           {active ? (
             <div className={`${styles.card} ${styles.overlay}`}>
-              <CardContent story={active} assignee={members.find((member) => member.id === active.assigneeId)} status={columns.find((column) => column.id === active.columnId)?.name} t={t} />
+              <CardContent story={active} sprint={active.sprintId ? sprintsById.get(active.sprintId) : undefined} assignee={members.find((member) => member.id === active.assigneeId)} status={columns.find((column) => column.id === active.columnId)?.name} t={t} />
             </div>
           ) : null}
         </DragOverlay>
@@ -555,6 +563,7 @@ export function BoardView({
         <StoryDrawer
           key={selected.id}
           members={members}
+          sprints={sprints}
           workspaceId={workspaceId}
           story={selected}
           columns={columns}

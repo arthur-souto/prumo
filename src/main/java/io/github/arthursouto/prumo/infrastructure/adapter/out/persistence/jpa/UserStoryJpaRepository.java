@@ -16,6 +16,8 @@ public interface UserStoryJpaRepository extends JpaRepository<UserStoryEntity, U
 
     List<UserStoryEntity> findByColumnId(UUID columnId);
 
+    List<UserStoryEntity> findBySprintIdIn(Collection<UUID> sprintIds);
+
     List<UserStoryEntity> findByWorkspaceIdAndStoryKeyIn(UUID workspaceId, Collection<String> storyKeys);
 
     long countByWorkspaceId(UUID workspaceId);
