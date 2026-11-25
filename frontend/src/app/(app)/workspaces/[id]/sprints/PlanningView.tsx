@@ -343,7 +343,7 @@ export function PlanningView({ workspaceId, board, members, repositories: initia
         ) : null}
       </div>
 
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+      <DndContext id={`planning-${workspaceId}`} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
         <div className={styles.sections}>
           {sprints.map((sprint) => (
             <PlanSection
