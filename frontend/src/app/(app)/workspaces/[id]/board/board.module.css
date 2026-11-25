@@ -178,7 +178,9 @@
 }
 
 .key {
+  flex: none;
   color: var(--text-subtle);
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
@@ -198,8 +200,18 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.spacer {
-  flex: 1;
+.cardMeta {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+}
+
+.cardMeta > * {
+  flex: none;
 }
 
 .icon {

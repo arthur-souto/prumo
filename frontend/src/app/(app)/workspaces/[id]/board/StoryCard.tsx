@@ -29,8 +29,8 @@ export function StoryCard({ story, disabled, landed, status, assignee, onOpen }:
   return (
     <li
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
       data-priority={story.priority}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`${styles.card} ${isDragging ? styles.dragging : ""} ${landed ? styles.landed : ""}`}
       {...attributes}
       {...listeners}
@@ -110,49 +110,50 @@ export function CardContent({
       <div className={styles.cardFooter}>
         <Bookmark size={14} aria-hidden="true" className={styles.typeIcon} />
         <span className={styles.key}>{story.key}</span>
-        <span className={styles.spacer} />
-        {story.repositoryId ? (
-          <span className={styles.icon} title={t("board.hasRepository")} role="img" aria-label={t("board.hasRepository")}>
-            <GitBranch size={14} aria-hidden="true" />
-          </span>
-        ) : null}
-        {story.subtasks && story.subtasks.total > 0 ? (
-          <span
-            className={`${styles.subtaskCount} ${story.subtasks.done === story.subtasks.total ? styles.subtasksDone : ""}`}
-            title={t("board.subtaskProgress", { done: story.subtasks.done, total: story.subtasks.total })}
-            role="img"
-            aria-label={t("board.subtaskProgress", { done: story.subtasks.done, total: story.subtasks.total })}
-          >
-            <ListChecks size={14} aria-hidden="true" />
-            {story.subtasks.done}/{story.subtasks.total}
-          </span>
-        ) : null}
-        {story.columnSource === "GITHUB" ? <GithubOrigin compact action="column" /> : null}
-        {pullRequest ? (
-          <span
-            className={`${styles.icon} ${pullRequest.className}`}
-            title={t("board.hasPullRequest")}
-            role="img"
-            aria-label={t("board.hasPullRequest")}
-          >
-            <pullRequest.Icon size={14} aria-hidden="true" />
-          </span>
-        ) : null}
-        {story.storyPoints !== null ? (
-          <span className={styles.points} title={t("board.points", { count: story.storyPoints })}>
-            {story.storyPoints}
-          </span>
-        ) : null}
-        <PriorityBadge priority={story.priority} label={t(`priority.${story.priority}`)} />
-        {assignee ? (
-          <span className={styles.assignee} title={assignee.name}>
-            <Avatar name={assignee.name} seed={assignee.id} src={assignee.avatarUrl} size="sm" />
-          </span>
-        ) : (
-          <span className={`${styles.assignee} ${styles.unassigned}`} title={t("story.unassigned")} role="img" aria-label={t("story.unassigned")}>
-            <User size={14} aria-hidden="true" />
-          </span>
-        )}
+        <span className={styles.cardMeta}>
+          {story.repositoryId ? (
+            <span className={styles.icon} title={t("board.hasRepository")} role="img" aria-label={t("board.hasRepository")}>
+              <GitBranch size={14} aria-hidden="true" />
+            </span>
+          ) : null}
+          {story.subtasks && story.subtasks.total > 0 ? (
+            <span
+              className={`${styles.subtaskCount} ${story.subtasks.done === story.subtasks.total ? styles.subtasksDone : ""}`}
+              title={t("board.subtaskProgress", { done: story.subtasks.done, total: story.subtasks.total })}
+              role="img"
+              aria-label={t("board.subtaskProgress", { done: story.subtasks.done, total: story.subtasks.total })}
+            >
+              <ListChecks size={14} aria-hidden="true" />
+              {story.subtasks.done}/{story.subtasks.total}
+            </span>
+          ) : null}
+          {story.columnSource === "GITHUB" ? <GithubOrigin compact action="column" /> : null}
+          {pullRequest ? (
+            <span
+              className={`${styles.icon} ${pullRequest.className}`}
+              title={t("board.hasPullRequest")}
+              role="img"
+              aria-label={t("board.hasPullRequest")}
+            >
+              <pullRequest.Icon size={14} aria-hidden="true" />
+            </span>
+          ) : null}
+          {story.storyPoints !== null ? (
+            <span className={styles.points} title={t("board.points", { count: story.storyPoints })}>
+              {story.storyPoints}
+            </span>
+          ) : null}
+          <PriorityBadge priority={story.priority} label={t(`priority.${story.priority}`)} />
+          {assignee ? (
+            <span className={styles.assignee} title={assignee.name}>
+              <Avatar name={assignee.name} seed={assignee.id} src={assignee.avatarUrl} size="sm" />
+            </span>
+          ) : (
+            <span className={`${styles.assignee} ${styles.unassigned}`} title={t("story.unassigned")} role="img" aria-label={t("story.unassigned")}>
+              <User size={14} aria-hidden="true" />
+            </span>
+          )}
+        </span>
       </div>
     </>
   );
