@@ -8,6 +8,7 @@ import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.BoardPersistenceAdapter;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.CommentPersistenceAdapter;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.StoryPersistenceAdapter;
+import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.UserStorySearchRepository;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.SubtaskPersistenceAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({BoardPersistenceAdapter.class, StoryPersistenceAdapter.class, SubtaskPersistenceAdapter.class, CommentPersistenceAdapter.class})
+@Import({BoardPersistenceAdapter.class, StoryPersistenceAdapter.class, UserStorySearchRepository.class, SubtaskPersistenceAdapter.class, CommentPersistenceAdapter.class})
 class CommentPersistenceIT {
 
     @Container

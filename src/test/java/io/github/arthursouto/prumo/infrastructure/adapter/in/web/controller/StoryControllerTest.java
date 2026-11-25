@@ -14,6 +14,9 @@ import io.github.arthursouto.prumo.application.port.in.command.CreateStoryComman
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.DeleteStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.ListStoriesQuery;
+import io.github.arthursouto.prumo.application.port.out.query.SortDirection;
+import io.github.arthursouto.prumo.application.port.out.query.StorySort;
+import io.github.arthursouto.prumo.application.port.out.result.PageResult;
 import io.github.arthursouto.prumo.application.port.in.command.MoveStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SetChecklistItemDoneCommand;
 import io.github.arthursouto.prumo.application.port.in.command.LinkStoryRepositoryCommand;
@@ -187,19 +190,63 @@ class StoryControllerTest {
     }
 
     @Test
-    void listPassesTheFilters() throws Exception {
-        when(listStories.execute(new ListStoriesQuery(userId, workspaceId, "api", StoryPriority.HIGH, "reset")))
-                .thenReturn(List.of(story));
+    void listPassesTheFiltersAndReturnsAPage() throws Exception {
+        UUID column = UUID.randomUUID();
+        UUID assignee = UUID.randomUUID();
+        when(listStories.execute(new ListStoriesQuery(
+                userId, workspaceId, "reset", List.of("api", "web"), List.of(StoryPriority.HIGH, StoryPriority.URGENT),
+                List.of(column), List.of(assignee), true, StorySort.UPDATED_AT, SortDirection.ASC, 1, 10
+        ))).thenReturn(new PageResult<>(List.of(story), 1, 10, 11));
 
-        mockMvc.perform(get(base).principal(principal()).param("label", "api").param("priority", "HIGH").param("q", "reset"))
+        mockMvc.perform(get(base).principal(principal())
+                        .param("q", "reset")
+                        .param("label", "api", "web")
+                        .param("priority", "HIGH", "URGENT")
+                        .param("columnId", column.toString())
+                        .param("assigneeId", assignee.toString())
+                        .param("unassigned", "true")
+                        .param("sort", "UPDATED_AT")
+                        .param("direction", "ASC")
+                        .param("page", "1")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].key").value("PRU-12"));
+                .andExpect(jsonPath("$.items[0].key").value("PRU-12"))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalItems").value(11))
+                .andExpect(jsonPath("$.totalPages").value(2));
     }
 
     @Test
-    void listRejectsAnUnknownPriority() throws Exception {
+    void listWithoutParametersLeavesTheDefaultsToTheUseCase() throws Exception {
+        when(listStories.execute(new ListStoriesQuery(
+                userId, workspaceId, null, null, null, null, null, null, null, null, null, null
+        ))).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
+
+        mockMvc.perform(get(base).principal(principal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0))
+                .andExpect(jsonPath("$.totalPages").value(0));
+    }
+
+    @Test
+    void listRejectsAnUnknownPriorityOrSort() throws Exception {
         mockMvc.perform(get(base).principal(principal()).param("priority", "HUGE"))
                 .andExpect(status().isBadRequest());
+        mockMvc.perform(get(base).principal(principal()).param("sort", "TITLE"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(listStories);
+    }
+
+    @Test
+    void listRejectsAnInvalidPageOrText() throws Exception {
+        mockMvc.perform(get(base).principal(principal())
+                        .param("page", "-1")
+                        .param("size", "101")
+                        .param("q", "x".repeat(101)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.length()").value(3));
 
         verifyNoInteractions(listStories);
     }

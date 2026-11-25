@@ -1,13 +1,14 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.in.web.api;
 
-import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStoryRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.AssignStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.LinkRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.MoveStoryRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.PageResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SetChecklistDoneRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.StoryResponse;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.StorySearchRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.UpdateStoryRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,9 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,14 +53,21 @@ public interface StoryApi {
             @Valid @RequestBody CreateStoryRequest request
     );
 
-    @Operation(summary = "List and search stories", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Search stories",
+            description = "Filters combine with AND; the values of a repeated filter combine with OR. Paginated.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "One page of stories"),
+            @ApiResponse(responseCode = "400", description = "Invalid filter, sort or page"),
+            @ApiResponse(responseCode = "404", description = "Workspace not found or the user is not a member")
+    })
     @GetMapping
-    List<StoryResponse> list(
+    PageResponse<StoryResponse> list(
             @Parameter(hidden = true) Authentication authentication,
             @PathVariable UUID workspaceId,
-            @RequestParam(required = false) String label,
-            @RequestParam(required = false) StoryPriority priority,
-            @RequestParam(name = "q", required = false) String text
+            @Valid @ParameterObject StorySearchRequest search
     );
 
     @Operation(summary = "Get a story by key", security = @SecurityRequirement(name = "bearerAuth"))
