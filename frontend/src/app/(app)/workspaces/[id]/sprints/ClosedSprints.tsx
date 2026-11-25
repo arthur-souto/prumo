@@ -74,9 +74,13 @@ export function ClosedSprints({ workspaceId, version, onOpen }: ClosedSprintsPro
                   <span className={styles.closedName}>{sprint.name}</span>
                   <span className={styles.closedDates}>{t("sprints.dates", { start: date(sprint.startDate), end: date(sprint.endDate) })}</span>
                   <span className={styles.closedPoints}>
-                    {t("sprints.completedOf", { completed: sprint.completedPoints ?? 0, committed: sprint.committedPoints ?? 0 })}
+                    {sprint.committedPoints
+                      ? t("sprints.completedOf", { completed: sprint.completedPoints ?? 0, committed: sprint.committedPoints })
+                      : t("sprints.completedOnly", { completed: sprint.completedPoints ?? 0 })}
                   </span>
-                  <span className={styles.closedShare}>{percent(sprint.completedPoints ?? 0, sprint.committedPoints ?? 0)}%</span>
+                  <span className={styles.closedShare}>
+                    {sprint.committedPoints ? `${percent(sprint.completedPoints ?? 0, sprint.committedPoints)}%` : "–"}
+                  </span>
                   <span className={styles.closedLink}>{t("sprints.report")}</span>
                 </button>
               </li>

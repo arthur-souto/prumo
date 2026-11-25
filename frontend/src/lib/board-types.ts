@@ -172,3 +172,18 @@ export type SprintBurndown = {
   baselinePoints: number;
   burndown: BurndownDay[];
 };
+
+export type VelocitySprint = {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  committedPoints: number | null;
+  completedPoints: number | null;
+};
+
+export type Velocity = {
+  sprints: VelocitySprint[];
+  averageCompleted: number;
+  averageCommitted: number;
+};

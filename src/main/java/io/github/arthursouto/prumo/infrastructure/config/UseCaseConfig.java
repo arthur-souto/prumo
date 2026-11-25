@@ -755,8 +755,10 @@ public class UseCaseConfig {
     }
 
     @Bean
-    GetVelocityUseCase getVelocityUseCase(WorkspaceAccess access, SprintRepositoryPort sprintRepository) {
-        return new GetVelocityService(access, sprintRepository);
+    GetVelocityUseCase getVelocityUseCase(WorkspaceAccess access,
+                                          SprintRepositoryPort sprintRepository,
+                                          SprintSnapshotRepositoryPort snapshotRepository) {
+        return new GetVelocityService(access, sprintRepository, snapshotRepository);
     }
 
     @Bean

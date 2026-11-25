@@ -381,6 +381,32 @@
   border: none;
 }
 
+.velocity {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--surface-card);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+
+.velocityHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.velocityGroup {
+  cursor: pointer;
+}
+
+.velocityHit {
+  fill: transparent;
+}
+
+.velocityGroup:hover .velocityHit {
+  fill: var(--surface-hover);
+}
+
 .closed {
   display: flex;
   flex-direction: column;

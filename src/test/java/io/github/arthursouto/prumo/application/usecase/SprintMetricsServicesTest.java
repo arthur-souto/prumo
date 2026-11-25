@@ -210,10 +210,10 @@ class SprintMetricsServicesTest {
         when(sprintRepository.search(new SprintSearchCriteria(workspace.getId(), null, Set.of(SprintState.CLOSED), 0, 3)))
                 .thenReturn(new PageResult<>(List.of(third, second, first), 0, 3, 7));
 
-        Velocity velocity = new GetVelocityService(access, sprintRepository)
+        Velocity velocity = new GetVelocityService(access, sprintRepository, snapshotRepository)
                 .execute(new GetVelocityQuery(memberId, workspace.getId(), 3));
 
-        assertThat(velocity.sprints()).extracting(Sprint::getName).containsExactly("Sprint 1", "Sprint 2", "Sprint 3");
+        assertThat(velocity.sprints()).extracting(entry -> entry.sprint().getName()).containsExactly("Sprint 1", "Sprint 2", "Sprint 3");
         assertThat(velocity.averageCompleted()).isEqualTo(12.3);
         assertThat(velocity.averageCommitted()).isEqualTo(15.0);
     }
@@ -223,7 +223,7 @@ class SprintMetricsServicesTest {
         when(sprintRepository.search(new SprintSearchCriteria(workspace.getId(), null, Set.of(SprintState.CLOSED), 0, 6)))
                 .thenReturn(new PageResult<>(List.of(), 0, 6, 0));
 
-        Velocity velocity = new GetVelocityService(access, sprintRepository)
+        Velocity velocity = new GetVelocityService(access, sprintRepository, snapshotRepository)
                 .execute(new GetVelocityQuery(memberId, workspace.getId(), null));
 
         assertThat(velocity.sprints()).isEmpty();
@@ -239,5 +239,19 @@ class SprintMetricsServicesTest {
 
         assertThat(metrics.baselinePoints()).isEqualTo(23);
         assertThat(metrics.burndown().get(0).idealPoints()).isEqualTo(23.0);
+    }
+
+    @Test
+    void aSprintStartedEmptyCountsItsFirstRecordedTotalAsCommitted() {
+        Sprint empty = closed("Sprint 1", 0, 13);
+        when(sprintRepository.search(new SprintSearchCriteria(workspace.getId(), null, Set.of(SprintState.CLOSED), 0, 6)))
+                .thenReturn(new PageResult<>(List.of(empty), 0, 6, 1));
+        when(snapshotRepository.findBySprintId(empty.getId())).thenReturn(List.of(snapshot(empty, START, 23, 10)));
+
+        Velocity velocity = new GetVelocityService(access, sprintRepository, snapshotRepository)
+                .execute(new GetVelocityQuery(memberId, workspace.getId(), null));
+
+        assertThat(velocity.sprints().get(0).committedPoints()).isEqualTo(23);
+        assertThat(velocity.averageCommitted()).isEqualTo(23.0);
     }
 }
