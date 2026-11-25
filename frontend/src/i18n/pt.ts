@@ -225,8 +225,6 @@ export const pt: Messages = {
     title: "Quadro",
     searchPlaceholder: "Buscar histórias",
     searchLabel: "Buscar histórias",
-    allPriorities: "Todas as prioridades",
-    allLabels: "Todas as labels",
     clearFilters: "Limpar filtros",
     filtersActive: "Há filtros ativos. Limpe-os para arrastar os cards.",
     createStory: "Criar história",

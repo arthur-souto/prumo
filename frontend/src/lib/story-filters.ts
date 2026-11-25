@@ -71,3 +71,46 @@ export function storySearchQuery(filters: StoryFilters, order: StoryOrder, page:
 export function toggle<T>(values: T[], value: T) {
   return values.includes(value) ? values.filter((candidate) => candidate !== value) : [...values, value];
 }
+
+export function normalizeText(value: string) {
+  return value.normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase();
+}
+
+export function matchesStoryFilters(story: Story, filters: StoryFilters) {
+  if (filters.priorities.length > 0 && !filters.priorities.includes(story.priority)) {
+    return false;
+  }
+
+  if (filters.columnIds.length > 0 && !filters.columnIds.includes(story.columnId)) {
+    return false;
+  }
+
+  if (filters.labels.length > 0) {
+    const wanted = new Set(filters.labels.map((label) => label.toLowerCase()));
+
+    if (!story.labels.some((label) => wanted.has(label.toLowerCase()))) {
+      return false;
+    }
+  }
+
+  if (filters.assigneeIds.length > 0 || filters.unassigned) {
+    const assigned = story.assigneeId !== null && filters.assigneeIds.includes(story.assigneeId);
+    const unassigned = filters.unassigned && story.assigneeId === null;
+
+    if (!assigned && !unassigned) {
+      return false;
+    }
+  }
+
+  const text = normalizeText(filters.text.trim());
+
+  if (text === "") {
+    return true;
+  }
+
+  return (
+    normalizeText(story.title).includes(text) ||
+    story.key.toLowerCase().includes(text) ||
+    normalizeText(story.description ?? "").includes(text)
+  );
+}
