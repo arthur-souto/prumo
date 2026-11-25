@@ -1,0 +1,113 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-height-compact);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  background: var(--surface-sunken);
+  border: var(--border-width-input) solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-default);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  background: var(--surface-pressed);
+}
+
+.trigger:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.trigger[data-state="open"] {
+  background: var(--surface-pressed);
+}
+
+.active {
+  border-color: var(--border-focus);
+}
+
+.count {
+  min-width: 1.25rem;
+  padding: 0 var(--space-1);
+  background: var(--border-focus);
+  border-radius: var(--radius-sm);
+  color: var(--surface-card);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.chevron {
+  color: var(--text-subtlest);
+}
+
+.content {
+  z-index: var(--z-popover);
+  min-width: 12rem;
+  max-height: min(22rem, var(--radix-dropdown-menu-content-available-height));
+  overflow-y: auto;
+  padding: var(--space-1);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-default);
+  font-size: var(--font-size-md);
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.item[data-highlighted] {
+  background: var(--surface-hover);
+}
+
+.box {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border: var(--border-width-input) solid var(--border-input);
+  border-radius: var(--radius-sm);
+  color: var(--surface-card);
+}
+
+.item[data-state="checked"] .box {
+  background: var(--border-focus);
+  border-color: var(--border-focus);
+}
+
+.text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--space-2);
+  color: var(--text-subtlest);
+  font-size: var(--font-size-sm);
+}
+
+.separator {
+  height: var(--border-width);
+  margin: var(--space-1) 0;
+  background: var(--border-default);
+}
