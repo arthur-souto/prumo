@@ -1,5 +1,7 @@
 package io.github.arthursouto.prumo.application.port.out;
 
+import io.github.arthursouto.prumo.application.port.out.query.StorySearchCriteria;
+import io.github.arthursouto.prumo.application.port.out.result.PageResult;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import java.util.Collection;
@@ -20,6 +22,8 @@ public interface StoryRepositoryPort {
     List<UserStory> findAllByWorkspaceId(UUID workspaceId);
 
     List<UserStory> findAllByColumnId(UUID columnId);
+
+    PageResult<UserStory> search(StorySearchCriteria criteria);
 
     List<UserStory> findAllByWorkspaceIdAndKeys(UUID workspaceId, Collection<String> keys);
 

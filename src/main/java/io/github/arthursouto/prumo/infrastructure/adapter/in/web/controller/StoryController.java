@@ -21,7 +21,6 @@ import io.github.arthursouto.prumo.application.port.in.command.ListStoriesQuery;
 import io.github.arthursouto.prumo.application.port.in.command.MoveStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SetChecklistItemDoneCommand;
 import io.github.arthursouto.prumo.application.port.in.command.UpdateStoryCommand;
-import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.api.StoryApi;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.ChecklistItemRequest;
@@ -30,8 +29,10 @@ import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.CreateStory
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.AssignStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.LinkRepositoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.MoveStoryRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.PageResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SetChecklistDoneRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.StoryResponse;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.StorySearchRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.UpdateStoryRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -100,15 +101,21 @@ public class StoryController implements StoryApi {
     }
 
     @Override
-    public List<StoryResponse> list(Authentication authentication,
-                                    UUID workspaceId,
-                                    String label,
-                                    StoryPriority priority,
-                                    String text) {
-        return listStories.execute(new ListStoriesQuery(userId(authentication), workspaceId, label, priority, text))
-                .stream()
-                .map(StoryResponse::from)
-                .toList();
+    public PageResponse<StoryResponse> list(Authentication authentication, UUID workspaceId, StorySearchRequest search) {
+        return PageResponse.from(listStories.execute(new ListStoriesQuery(
+                userId(authentication),
+                workspaceId,
+                search.q(),
+                search.label(),
+                search.priority(),
+                search.columnId(),
+                search.assigneeId(),
+                search.unassigned(),
+                search.sort(),
+                search.direction(),
+                search.page(),
+                search.size()
+        )), StoryResponse::from);
     }
 
     @Override

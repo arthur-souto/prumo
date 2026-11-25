@@ -1,6 +1,8 @@
 package io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter;
 
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.query.StorySearchCriteria;
+import io.github.arthursouto.prumo.application.port.out.result.PageResult;
 import io.github.arthursouto.prumo.domain.model.story.PullRequest;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.entity.PullRequestEntity;
@@ -11,6 +13,7 @@ import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.Pu
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.StoryChecklistItemJpaRepository;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.StoryLabelJpaRepository;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.UserStoryJpaRepository;
+import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.UserStorySearchRepository;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.mapper.StoryMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,15 +37,18 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
     private final StoryLabelJpaRepository labelRepository;
     private final StoryChecklistItemJpaRepository itemRepository;
     private final PullRequestJpaRepository pullRequestRepository;
+    private final UserStorySearchRepository searchRepository;
 
     public StoryPersistenceAdapter(UserStoryJpaRepository storyRepository,
                                    StoryLabelJpaRepository labelRepository,
                                    StoryChecklistItemJpaRepository itemRepository,
-                                   PullRequestJpaRepository pullRequestRepository) {
+                                   PullRequestJpaRepository pullRequestRepository,
+                                   UserStorySearchRepository searchRepository) {
         this.storyRepository = storyRepository;
         this.labelRepository = labelRepository;
         this.itemRepository = itemRepository;
         this.pullRequestRepository = pullRequestRepository;
+        this.searchRepository = searchRepository;
     }
 
     @Override
@@ -97,6 +103,14 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResult<UserStory> search(StorySearchCriteria criteria) {
+        List<UserStoryEntity> page = searchRepository.find(criteria);
+
+        return new PageResult<>(inOrder(page), criteria.page(), criteria.size(), total(criteria, page.size()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<UserStory> findAllByWorkspaceIdAndKeys(UUID workspaceId, Collection<String> keys) {
         return hydrate(storyRepository.findByWorkspaceIdAndStoryKeyIn(workspaceId, keys));
     }
@@ -136,7 +150,18 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
         return pullRequestRepository.findByStoryIdAndSubtaskIdIsNull(storyId).stream().map(StoryMapper::toDomain).toList();
     }
 
+    private long total(StorySearchCriteria criteria, int found) {
+        if (found > 0 && found < criteria.size() || found == 0 && criteria.page() == 0) {
+            return (long) criteria.offset() + found;
+        }
+        return searchRepository.count(criteria);
+    }
+
     private List<UserStory> hydrate(List<UserStoryEntity> entities) {
+        return inOrder(entities).stream().sorted(BY_RANK).toList();
+    }
+
+    private List<UserStory> inOrder(List<UserStoryEntity> entities) {
         if (entities.isEmpty()) {
             return List.of();
         }
@@ -156,7 +181,6 @@ public class StoryPersistenceAdapter implements StoryRepositoryPort {
                         items.getOrDefault(entity.getId(), List.of()),
                         pullRequests.getOrDefault(entity.getId(), List.of())
                 ))
-                .sorted(BY_RANK)
                 .toList();
     }
 }

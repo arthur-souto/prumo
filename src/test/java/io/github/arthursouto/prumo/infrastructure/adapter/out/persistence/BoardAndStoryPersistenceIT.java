@@ -9,6 +9,7 @@ import io.github.arthursouto.prumo.domain.model.story.StoryPriority;
 import io.github.arthursouto.prumo.domain.model.story.UserStory;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.BoardPersistenceAdapter;
 import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.adapter.StoryPersistenceAdapter;
+import io.github.arthursouto.prumo.infrastructure.adapter.out.persistence.jpa.UserStorySearchRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Testcontainers
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({BoardPersistenceAdapter.class, StoryPersistenceAdapter.class})
+@Import({BoardPersistenceAdapter.class, StoryPersistenceAdapter.class, UserStorySearchRepository.class})
 class BoardAndStoryPersistenceIT {
 
     @Container

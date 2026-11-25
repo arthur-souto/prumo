@@ -13,6 +13,10 @@ import io.github.arthursouto.prumo.application.port.out.ActivityRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.BoardRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.StoryRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.WorkspaceRepositoryPort;
+import io.github.arthursouto.prumo.application.port.out.query.SortDirection;
+import io.github.arthursouto.prumo.application.port.out.query.StorySearchCriteria;
+import io.github.arthursouto.prumo.application.port.out.query.StorySort;
+import io.github.arthursouto.prumo.application.port.out.result.PageResult;
 import io.github.arthursouto.prumo.domain.exceptions.ResourceNotFoundException;
 import io.github.arthursouto.prumo.domain.model.board.Board;
 import io.github.arthursouto.prumo.domain.model.board.ColumnKind;
@@ -29,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -153,27 +158,43 @@ class StoryServicesTest {
     }
 
     @Test
-    void listFiltersByPriorityLabelAndTextAndSortsNewestFirst() {
+    void listNormalizesTheFiltersAndAppliesTheDefaults() {
         asMember();
-        UserStory a = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 1, "a");
-        UserStory b = BoardFixtures.story(workspace, BoardFixtures.column(board, ColumnKind.TODO), 2, "b");
-        a.update("Login page", "about oauth", StoryPriority.HIGH, null, List.of("Frontend"), List.of());
-        b.update("Reset password", null, StoryPriority.LOW, null, List.of("backend"), List.of());
-        when(storyRepository.findAllByWorkspaceId(workspace.getId())).thenReturn(List.of(a, b));
+        UUID column = UUID.randomUUID();
+        PageResult<UserStory> page = new PageResult<>(List.of(), 0, 20, 0);
+        when(storyRepository.search(any())).thenReturn(page);
         ListStoriesService service = new ListStoriesService(access, storyRepository);
 
-        assertThat(service.execute(new ListStoriesQuery(userId, workspace.getId(), null, null, null)))
-                .extracting(UserStory::getKey).containsExactly("PRU-2", "PRU-1");
-        assertThat(service.execute(new ListStoriesQuery(userId, workspace.getId(), null, StoryPriority.HIGH, null)))
-                .extracting(UserStory::getKey).containsExactly("PRU-1");
-        assertThat(service.execute(new ListStoriesQuery(userId, workspace.getId(), "FRONTEND", null, null)))
-                .extracting(UserStory::getKey).containsExactly("PRU-1");
-        assertThat(service.execute(new ListStoriesQuery(userId, workspace.getId(), null, null, "OAUTH")))
-                .extracting(UserStory::getKey).containsExactly("PRU-1");
-        assertThat(service.execute(new ListStoriesQuery(userId, workspace.getId(), null, null, "pru-2")))
-                .extracting(UserStory::getKey).containsExactly("PRU-2");
-        assertThat(service.execute(new ListStoriesQuery(userId, workspace.getId(), "backend", StoryPriority.HIGH, null)))
-                .isEmpty();
+        assertThat(service.execute(new ListStoriesQuery(
+                userId, workspace.getId(), "  OAuth  ", List.of(" Frontend ", "frontend", " "),
+                List.of(StoryPriority.HIGH, StoryPriority.HIGH), List.of(column), null, null, null, null, null, null
+        ))).isSameAs(page);
+
+        ArgumentCaptor<StorySearchCriteria> criteria = ArgumentCaptor.forClass(StorySearchCriteria.class);
+        verify(storyRepository).search(criteria.capture());
+        assertThat(criteria.getValue()).isEqualTo(new StorySearchCriteria(
+                workspace.getId(), "oauth", Set.of("frontend"), Set.of(StoryPriority.HIGH), Set.of(column), Set.of(),
+                false, StorySort.NUMBER, SortDirection.DESC, 0, 20
+        ));
+    }
+
+    @Test
+    void listTreatsABlankTextAsNoTextAndKeepsTheRequestedPage() {
+        asMember();
+        when(storyRepository.search(any())).thenReturn(new PageResult<>(List.of(), 2, 5, 0));
+        ListStoriesService service = new ListStoriesService(access, storyRepository);
+
+        service.execute(new ListStoriesQuery(
+                userId, workspace.getId(), "   ", null, null, null, null, true, StorySort.PRIORITY, SortDirection.ASC, 2, 5
+        ));
+
+        ArgumentCaptor<StorySearchCriteria> criteria = ArgumentCaptor.forClass(StorySearchCriteria.class);
+        verify(storyRepository).search(criteria.capture());
+        assertThat(criteria.getValue().text()).isNull();
+        assertThat(criteria.getValue().unassigned()).isTrue();
+        assertThat(criteria.getValue().sort()).isEqualTo(StorySort.PRIORITY);
+        assertThat(criteria.getValue().direction()).isEqualTo(SortDirection.ASC);
+        assertThat(criteria.getValue().offset()).isEqualTo(10);
     }
 
     @Test
