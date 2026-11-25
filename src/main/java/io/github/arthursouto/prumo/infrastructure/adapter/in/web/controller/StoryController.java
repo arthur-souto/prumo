@@ -111,6 +111,8 @@ public class StoryController implements StoryApi {
                 search.columnId(),
                 search.assigneeId(),
                 search.unassigned(),
+                search.sprintId(),
+                search.noSprint(),
                 search.sort(),
                 search.direction(),
                 search.page(),

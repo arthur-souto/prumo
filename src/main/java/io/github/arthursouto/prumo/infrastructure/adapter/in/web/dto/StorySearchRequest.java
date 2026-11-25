@@ -25,6 +25,10 @@ public record StorySearchRequest(
         @Size(max = 50) List<UUID> assigneeId,
         @Parameter(description = "Include unassigned stories; combined with assigneeId as an OR")
         Boolean unassigned,
+        @Parameter(description = "In any of these sprints")
+        @Size(max = 50) List<UUID> sprintId,
+        @Parameter(description = "Include stories in no sprint (the backlog); combined with sprintId as an OR")
+        Boolean noSprint,
         @Parameter(description = "Defaults to NUMBER, the newest first")
         StorySort sort,
         @Parameter(description = "Defaults to DESC")

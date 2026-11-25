@@ -23,6 +23,8 @@ public interface StoryRepositoryPort {
 
     List<UserStory> findAllByColumnId(UUID columnId);
 
+    List<UserStory> findAllBySprintIds(Collection<UUID> sprintIds);
+
     PageResult<UserStory> search(StorySearchCriteria criteria);
 
     List<UserStory> findAllByWorkspaceIdAndKeys(UUID workspaceId, Collection<String> keys);

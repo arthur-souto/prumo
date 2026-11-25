@@ -22,6 +22,7 @@ public final class UserStory {
     private List<ChecklistItem> acceptanceCriteria;
     private UUID repositoryId;
     private UUID assigneeId;
+    private UUID sprintId;
     private final List<PullRequest> pullRequests;
     private final Instant createdAt;
     private Instant updatedAt;
@@ -210,6 +211,20 @@ public final class UserStory {
 
     public UUID getAssigneeId() {
         return assigneeId;
+    }
+
+    public void planInto(UUID sprintId) {
+        this.sprintId = sprintId;
+        touch();
+    }
+
+    public UserStory withSprint(UUID sprintId) {
+        this.sprintId = sprintId;
+        return this;
+    }
+
+    public UUID getSprintId() {
+        return sprintId;
     }
 
     private void touch() {

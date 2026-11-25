@@ -13,6 +13,8 @@ public record StorySearchCriteria(
         Set<UUID> columnIds,
         Set<UUID> assigneeIds,
         boolean unassigned,
+        Set<UUID> sprintIds,
+        boolean withoutSprint,
         StorySort sort,
         SortDirection direction,
         int page,
