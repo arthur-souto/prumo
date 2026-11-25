@@ -14,6 +14,48 @@
   gap: var(--space-3);
 }
 
+.sprintBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+  font-size: var(--font-size-sm);
+}
+
+.sprintBarIcon {
+  flex: none;
+  color: var(--text-link);
+}
+
+.sprintBarName {
+  font-weight: var(--font-weight-semibold);
+}
+
+.sprintBarMeta,
+.sprintBarDays {
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.sprintBarGoal {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sprintBarDays {
+  margin-left: auto;
+}
+
+.sprintBarLink {
+  color: var(--text-link);
+  white-space: nowrap;
+}
+
 .toolbarActions {
   min-width: 0;
   display: flex;
@@ -319,6 +361,32 @@
 .status {
   color: var(--text-subtle);
   font-size: var(--font-size-sm);
+}
+
+.sprintChip {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 0 var(--space-2);
+  color: var(--text-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.sprintChip[data-state="ACTIVE"] {
+  color: var(--text-link);
+  background: var(--brand-bg-subtle);
+}
+
+.sprintName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .typeIcon {

@@ -8,9 +8,11 @@ type ModalProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  size?: "default" | "wide";
+  hideTitle?: boolean;
 };
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, size = "default", hideTitle = false }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className={styles.dialog}
+      className={`${styles.dialog} ${size === "wide" ? styles.wide : ""}`}
       aria-label={title}
       onClose={onClose}
       onClick={(event) => {
@@ -32,7 +34,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
     >
       {open ? (
         <div className={styles.content}>
-          <h2 className={styles.title}>{title}</h2>
+          {hideTitle ? null : <h2 className={styles.title}>{title}</h2>}
           {children}
         </div>
       ) : null}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { backendFetch } from "./backend";
 import { readAccessToken } from "./cookies";
-import type { Board, GithubConnection, Repository, Member, Story, Subtask } from "./board-types";
+import type { Board, GithubConnection, Repository, Member, Sprint, SprintPage, SprintState, Story, Subtask } from "./board-types";
 import type { Workspace } from "./workspace-types";
 
 async function authedGet(path: string) {
@@ -51,6 +51,14 @@ export async function listMembers(workspaceId: string): Promise<Member[]> {
   const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/members`);
 
   return response?.ok ? ((await response.json()) as Member[]) : [];
+}
+
+export async function listSprints(workspaceId: string, states: SprintState[] = []): Promise<Sprint[]> {
+  const query = new URLSearchParams({ size: "100" });
+  states.forEach((state) => query.append("state", state));
+  const response = await authedGet(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/sprints?${query}`);
+
+  return response?.ok ? ((await response.json()) as SprintPage).items : [];
 }
 
 export async function getSubtask(workspaceId: string, key: string): Promise<Subtask | null> {

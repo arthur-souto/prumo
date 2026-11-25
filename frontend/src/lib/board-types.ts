@@ -56,7 +56,33 @@ export type Story = {
   acceptanceCriteria: ChecklistItem[];
   repositoryId: string | null;
   assigneeId: string | null;
+  /** Null while the story is in the backlog. */
+  sprintId: string | null;
   pullRequests: PullRequest[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SprintState = "PLANNED" | "ACTIVE" | "CLOSED";
+
+export type SprintPage = { items: Sprint[]; page: number; size: number; totalItems: number; totalPages: number };
+
+export type Sprint = {
+  id: string;
+  name: string;
+  goal: string | null;
+  startDate: string;
+  endDate: string;
+  state: SprintState;
+  /** Points in the sprint when it started; null until then. */
+  committedPoints: number | null;
+  /** Points done when it closed; null until then. */
+  completedPoints: number | null;
+  storyCount: number;
+  totalPoints: number;
+  donePoints: number;
+  startedAt: string | null;
+  closedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

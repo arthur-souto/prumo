@@ -7,6 +7,8 @@ export type StoryFilters = {
   columnIds: string[];
   assigneeIds: string[];
   unassigned: boolean;
+  sprintIds: string[];
+  noSprint: boolean;
 };
 
 export const EMPTY_STORY_FILTERS: StoryFilters = {
@@ -16,6 +18,8 @@ export const EMPTY_STORY_FILTERS: StoryFilters = {
   columnIds: [],
   assigneeIds: [],
   unassigned: false,
+  sprintIds: [],
+  noSprint: false,
 };
 
 export type StoryOrder = "newest" | "oldest" | "updated" | "priority";
@@ -46,7 +50,9 @@ export function hasStoryFilters(filters: StoryFilters) {
     filters.labels.length > 0 ||
     filters.columnIds.length > 0 ||
     filters.assigneeIds.length > 0 ||
-    filters.unassigned
+    filters.unassigned ||
+    filters.sprintIds.length > 0 ||
+    filters.noSprint
   );
 }
 
@@ -60,6 +66,8 @@ export function storySearchQuery(filters: StoryFilters, order: StoryOrder, page:
   filters.columnIds.forEach((columnId) => query.append("columnId", columnId));
   filters.assigneeIds.forEach((assigneeId) => query.append("assigneeId", assigneeId));
   if (filters.unassigned) query.set("unassigned", "true");
+  filters.sprintIds.forEach((sprintId) => query.append("sprintId", sprintId));
+  if (filters.noSprint) query.set("noSprint", "true");
   query.set("sort", ORDER_PARAMS[order].sort);
   query.set("direction", ORDER_PARAMS[order].direction);
   query.set("page", String(page));
@@ -102,6 +110,15 @@ export function matchesStoryFilters(story: Story, filters: StoryFilters) {
     }
   }
 
+  if (filters.sprintIds.length > 0 || filters.noSprint) {
+    const planned = story.sprintId !== null && filters.sprintIds.includes(story.sprintId);
+    const backlog = filters.noSprint && story.sprintId === null;
+
+    if (!planned && !backlog) {
+      return false;
+    }
+  }
+
   const text = normalizeText(filters.text.trim());
 
   if (text === "") {
@@ -116,9 +133,11 @@ export function matchesStoryFilters(story: Story, filters: StoryFilters) {
 }
 
 const NO_ASSIGNEE = "none";
+const NO_SPRINT = "none";
 
 export function readStoryFilters(params: URLSearchParams): StoryFilters {
   const assignees = params.getAll("assignee");
+  const sprints = params.getAll("sprint");
 
   return {
     text: params.get("q") ?? "",
@@ -127,11 +146,13 @@ export function readStoryFilters(params: URLSearchParams): StoryFilters {
     columnIds: params.getAll("column").filter((value) => value !== ""),
     assigneeIds: assignees.filter((value) => value !== "" && value !== NO_ASSIGNEE),
     unassigned: assignees.includes(NO_ASSIGNEE),
+    sprintIds: sprints.filter((value) => value !== "" && value !== NO_SPRINT),
+    noSprint: sprints.includes(NO_SPRINT),
   };
 }
 
 export function writeStoryFilters(params: URLSearchParams, filters: StoryFilters) {
-  for (const key of ["q", "priority", "label", "column", "assignee", "page"]) {
+  for (const key of ["q", "priority", "label", "column", "assignee", "sprint", "page"]) {
     params.delete(key);
   }
 
@@ -143,6 +164,8 @@ export function writeStoryFilters(params: URLSearchParams, filters: StoryFilters
   filters.columnIds.forEach((columnId) => params.append("column", columnId));
   filters.assigneeIds.forEach((assigneeId) => params.append("assignee", assigneeId));
   if (filters.unassigned) params.append("assignee", NO_ASSIGNEE);
+  filters.sprintIds.forEach((sprintId) => params.append("sprint", sprintId));
+  if (filters.noSprint) params.append("sprint", NO_SPRINT);
 }
 
 export function readStoryOrder(params: URLSearchParams): StoryOrder {

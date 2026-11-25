@@ -2,10 +2,10 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Bookmark, GitBranch, GitMerge, GitPullRequest, ListChecks, User } from "lucide-react";
+import { Bookmark, GitBranch, GitMerge, GitPullRequest, IterationCw, ListChecks, User } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { Avatar } from "@/components/ui/Avatar";
-import type { Member, Story } from "@/lib/board-types";
+import type { Member, Sprint, Story } from "@/lib/board-types";
 import { GithubOrigin } from "./GithubOrigin";
 import { PriorityBadge } from "./PriorityBadge";
 import styles from "./board.module.css";
@@ -16,10 +16,11 @@ type StoryCardProps = {
   landed: boolean;
   status?: string;
   assignee?: Member;
+  sprint?: Sprint;
   onOpen: (story: Story) => void;
 };
 
-export function StoryCard({ story, disabled, landed, status, assignee, onOpen }: StoryCardProps) {
+export function StoryCard({ story, disabled, landed, status, assignee, sprint, onOpen }: StoryCardProps) {
   const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: story.id,
@@ -35,7 +36,7 @@ export function StoryCard({ story, disabled, landed, status, assignee, onOpen }:
       {...attributes}
       {...listeners}
     >
-      <CardContent story={story} status={status} assignee={assignee} onOpen={onOpen} t={t} />
+      <CardContent story={story} status={status} assignee={assignee} sprint={sprint} onOpen={onOpen} t={t} />
     </li>
   );
 }
@@ -75,12 +76,14 @@ export function CardContent({
   story,
   status,
   assignee,
+  sprint,
   onOpen,
   t,
 }: {
   story: Story;
   status?: string;
   assignee?: Member;
+  sprint?: Sprint;
   onOpen?: (story: Story) => void;
   t: ReturnType<typeof useT>;
 }) {
@@ -106,6 +109,13 @@ export function CardContent({
       ) : null}
 
       {status ? <span className={styles.status}>{status}</span> : null}
+
+      {sprint ? (
+        <span className={styles.sprintChip} data-state={sprint.state} title={`${t("sprints.sprint")}: ${sprint.name}`}>
+          <IterationCw size={12} aria-hidden="true" />
+          <span className={styles.sprintName}>{sprint.name}</span>
+        </span>
+      ) : null}
 
       <div className={styles.cardFooter}>
         <Bookmark size={14} aria-hidden="true" className={styles.typeIcon} />

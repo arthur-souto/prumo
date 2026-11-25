@@ -26,6 +26,7 @@ import {
   type Priority,
   type PullRequestState,
   type Repository,
+  type Sprint,
   type Story,
 } from "@/lib/board-types";
 import { isHttpUrl, parseLabels } from "@/lib/board-utils";
@@ -41,6 +42,7 @@ type StoryDrawerProps = {
   story: Story;
   columns: Column[];
   members: Member[];
+  sprints: Sprint[];
   repositories: Repository[];
   hasGithubToken: boolean;
   onChange: (story: Story) => void;
@@ -58,6 +60,7 @@ export function StoryDrawer({
   story,
   columns,
   members,
+  sprints,
   repositories,
   hasGithubToken,
   onChange,
@@ -85,6 +88,10 @@ export function StoryDrawer({
   const [subtaskChanges, setSubtaskChanges] = useState(0);
 
   const repository = repositories.find((candidate) => candidate.id === story.repositoryId);
+  const plannable = useMemo(
+    () => sprints.filter((sprint) => sprint.state !== "CLOSED" || sprint.id === story.sprintId),
+    [sprints, story.sprintId],
+  );
   const orderedColumns = useMemo(() => [...columns].sort((a, b) => a.position - b.position), [columns]);
 
   const dirty =
@@ -157,6 +164,17 @@ export function StoryDrawer({
 
   async function assign(assigneeId: string) {
     const result = await sendJson<Story>(`${base}/assignee`, "PUT", { assigneeId: assigneeId === "" ? null : assigneeId });
+
+    if (!result.ok || !result.data) {
+      setError(errorMessage(t, result.code, result.reason));
+      return;
+    }
+
+    onChange(result.data);
+  }
+
+  async function plan(sprintId: string) {
+    const result = await sendJson<Story>(`${base}/sprint`, "PUT", { sprintId: sprintId === "" ? null : sprintId });
 
     if (!result.ok || !result.data) {
       setError(errorMessage(t, result.code, result.reason));
@@ -271,6 +289,17 @@ export function StoryDrawer({
                   {members.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.name}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className={styles.field}>
+                <span>{t("sprints.sprint")}</span>
+                <Select value={story.sprintId ?? ""} onChange={(event) => void plan(event.target.value)}>
+                  <option value="">{t("sprints.backlog")}</option>
+                  {plannable.map((sprint) => (
+                    <option key={sprint.id} value={sprint.id} disabled={sprint.state === "CLOSED"}>
+                      {sprint.state === "ACTIVE" ? `${sprint.name} · ${t("sprints.states.ACTIVE")}` : sprint.name}
                     </option>
                   ))}
                 </Select>

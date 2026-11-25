@@ -1,9 +1,10 @@
 "use client";
 
+import { IterationCw } from "lucide-react";
 import { useEffect, useId, useState, type KeyboardEvent } from "react";
 import { PriorityBadge } from "@/app/(app)/workspaces/[id]/board/PriorityBadge";
 import { useT } from "@/i18n/client";
-import type { Story } from "@/lib/board-types";
+import type { Sprint, SprintPage, Story } from "@/lib/board-types";
 import { sendJson } from "@/lib/client";
 import { EMPTY_STORY_FILTERS, storySearchQuery, type StoryPage } from "@/lib/story-filters";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -11,14 +12,25 @@ import styles from "./story-suggestions.module.css";
 
 const MIN_LENGTH = 2;
 const LIMIT = 6;
+const SPRINT_LIMIT = 3;
 const DELAY = 200;
 
-export function useStorySuggestions(workspaceId: string | undefined, value: string, onPick: ((story: Story) => void) | undefined) {
+export type Suggestion = { kind: "story"; story: Story } | { kind: "sprint"; sprint: Sprint };
+
+const keyOf = (item: Suggestion) => (item.kind === "story" ? item.story.id : item.sprint.id);
+
+export function useStorySuggestions(
+  workspaceId: string | undefined,
+  value: string,
+  onPick: ((story: Story) => void) | undefined,
+  onPickSprint?: (sprint: Sprint) => void,
+) {
   const id = useId();
   const typed = value.trim();
   const term = useDebouncedValue(typed, DELAY);
   const enabled = Boolean(workspaceId && onPick);
-  const [loaded, setLoaded] = useState<{ term: string; items: Story[] }>({ term: "", items: [] });
+  const withSprints = Boolean(onPickSprint);
+  const [loaded, setLoaded] = useState<{ term: string; items: Suggestion[] }>({ term: "", items: [] });
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
 
@@ -26,27 +38,40 @@ export function useStorySuggestions(workspaceId: string | undefined, value: stri
     if (!enabled || term.length < MIN_LENGTH) return;
 
     let current = true;
+    const base = `/api/workspaces/${workspaceId}`;
     const query = storySearchQuery({ ...EMPTY_STORY_FILTERS, text: term }, "newest", 0, LIMIT);
+    const sprintQuery = new URLSearchParams({ q: term, size: String(SPRINT_LIMIT) }).toString();
 
-    sendJson<StoryPage>(`/api/workspaces/${workspaceId}/stories?${query}`, "GET").then((response) => {
-      if (current && response.ok && response.data) {
-        setLoaded({ term, items: response.data.items });
-        setActive(-1);
-      }
+    Promise.all([
+      withSprints ? sendJson<SprintPage>(`${base}/sprints?${sprintQuery}`, "GET") : Promise.resolve(null),
+      sendJson<StoryPage>(`${base}/stories?${query}`, "GET"),
+    ]).then(([sprints, stories]) => {
+      if (!current || !stories.ok || !stories.data) return;
+
+      setLoaded({
+        term,
+        items: [
+          ...(sprints?.ok && sprints.data ? sprints.data.items.map((sprint) => ({ kind: "sprint" as const, sprint })) : []),
+          ...stories.data.items.map((story) => ({ kind: "story" as const, story })),
+        ],
+      });
+      setActive(-1);
     });
 
     return () => {
       current = false;
     };
-  }, [enabled, term, workspaceId]);
+  }, [enabled, withSprints, term, workspaceId]);
 
   const visible = enabled && open && typed.length >= MIN_LENGTH && loaded.term === typed;
   const items = visible ? loaded.items : [];
 
-  function pick(story: Story) {
+  function pick(item: Suggestion) {
     setOpen(false);
     setActive(-1);
-    onPick?.(story);
+
+    if (item.kind === "story") onPick?.(item.story);
+    else onPickSprint?.(item.sprint);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -101,25 +126,40 @@ export function StorySuggestions({ id, visible, items, active, onPick, onHover }
 
   if (!visible) return null;
 
+  const firstStory = items.findIndex((item) => item.kind === "story");
+  const hasSprints = items.some((item) => item.kind === "sprint");
+
   return (
     <ul id={id} role="listbox" aria-label={t("filters.suggestions")} className={styles.list}>
       {items.length === 0 ? (
         <li className={styles.empty}>{t("filters.noSuggestions")}</li>
       ) : (
-        items.map((story, index) => (
+        items.map((item, index) => (
           <li
-            key={story.id}
+            key={keyOf(item)}
             id={`${id}-${index}`}
             role="option"
             aria-selected={index === active}
-            className={`${styles.option} ${index === active ? styles.active : ""}`}
+            className={`${styles.option} ${index === active ? styles.active : ""} ${
+              hasSprints && index === firstStory ? styles.divided : ""
+            }`}
             onMouseDown={(event) => event.preventDefault()}
             onMouseEnter={() => onHover(index)}
-            onClick={() => onPick(story)}
+            onClick={() => onPick(item)}
           >
-            <PriorityBadge priority={story.priority} label={t(`priority.${story.priority}`)} />
-            <span className={styles.key}>{story.key}</span>
-            <span className={styles.title}>{story.title}</span>
+            {item.kind === "story" ? (
+              <>
+                <PriorityBadge priority={item.story.priority} label={t(`priority.${item.story.priority}`)} />
+                <span className={styles.key}>{item.story.key}</span>
+                <span className={styles.title}>{item.story.title}</span>
+              </>
+            ) : (
+              <>
+                <IterationCw size={14} aria-hidden="true" className={styles.sprintIcon} />
+                <span className={styles.title}>{item.sprint.name}</span>
+                <span className={styles.kind}>{t(`sprints.states.${item.sprint.state}`)}</span>
+              </>
+            )}
           </li>
         ))
       )}

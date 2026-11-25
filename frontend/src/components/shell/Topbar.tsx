@@ -8,7 +8,7 @@ import { StorySuggestions, useStorySuggestions } from "@/components/search/Story
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useT } from "@/i18n/client";
-import type { Story } from "@/lib/board-types";
+import type { Sprint, Story } from "@/lib/board-types";
 import { replaceSearchParams } from "@/lib/url-state";
 import { UserMenu } from "./UserMenu";
 import styles from "./shell.module.css";
@@ -33,8 +33,8 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
   const pathname = usePathname();
   const input = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
-  const target = pathname.endsWith("/backlog") ? "backlog" : "board";
-  const suggestions = useStorySuggestions(workspaceId, query, workspaceId ? openStory : undefined);
+  const target = pathname.endsWith("/backlog") ? "backlog" : pathname.endsWith("/sprints") ? "sprints" : "board";
+  const suggestions = useStorySuggestions(workspaceId, query, workspaceId ? openStory : undefined, workspaceId ? openSprint : undefined);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -72,10 +72,23 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
     router.push(`${path}${suffix}`);
   }
 
+  function openSprint(sprint: Sprint) {
+    setQuery("");
+    input.current?.blur();
+    const path = `/workspaces/${workspaceId}/sprints`;
+
+    if (pathname === path) {
+      replaceSearchParams((current) => current.set("sprint", sprint.id));
+      return;
+    }
+
+    router.push(`${path}?sprint=${encodeURIComponent(sprint.id)}`);
+  }
+
   function openStory(story: Story) {
     setQuery("");
     input.current?.blur();
-    const path = `/workspaces/${workspaceId}/${target}`;
+    const path = `/workspaces/${workspaceId}/${target === "sprints" ? "board" : target}`;
 
     if (pathname === path) {
       replaceSearchParams((current) => current.set("story", story.key));
