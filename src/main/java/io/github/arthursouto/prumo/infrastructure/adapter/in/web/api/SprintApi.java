@@ -3,9 +3,12 @@ package io.github.arthursouto.prumo.infrastructure.adapter.in.web.api;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.PageResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.PlanStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintMetricsResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintSearchRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.StoryResponse;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.VelocityRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.VelocityResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,6 +41,27 @@ public interface SprintApi {
             @Parameter(hidden = true) Authentication authentication,
             @PathVariable UUID workspaceId,
             @Valid @ParameterObject SprintSearchRequest search
+    );
+
+    @Operation(summary = "Velocity of the latest closed sprints",
+            description = "Committed and completed points of each, the oldest first, and their averages.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/sprints/velocity")
+    VelocityResponse velocity(
+            @Parameter(hidden = true) Authentication authentication,
+            @PathVariable UUID workspaceId,
+            @Valid @ParameterObject VelocityRequest request
+    );
+
+    @Operation(summary = "Burndown of a sprint",
+            description = "One entry per day from the start to the end, with the recorded remaining points and the ideal line. "
+                    + "Today's entry of the active sprint is measured live.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/sprints/{sprintId}/metrics")
+    SprintMetricsResponse metrics(
+            @Parameter(hidden = true) Authentication authentication,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID sprintId
     );
 
     @Operation(summary = "Get a sprint", security = @SecurityRequirement(name = "bearerAuth"))

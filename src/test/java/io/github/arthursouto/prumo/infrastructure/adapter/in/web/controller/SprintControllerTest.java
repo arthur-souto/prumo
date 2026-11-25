@@ -3,13 +3,19 @@ package io.github.arthursouto.prumo.infrastructure.adapter.in.web.controller;
 import io.github.arthursouto.prumo.application.port.in.CloseSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.DeleteSprintUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetSprintMetricsUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetSprintUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetVelocityUseCase;
 import io.github.arthursouto.prumo.application.port.in.ListSprintsUseCase;
 import io.github.arthursouto.prumo.application.port.in.PlanStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.StartSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.UpdateSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.command.CreateSprintCommand;
 import io.github.arthursouto.prumo.application.port.in.command.GetSprintQuery;
+import io.github.arthursouto.prumo.application.port.in.command.GetVelocityQuery;
+import io.github.arthursouto.prumo.application.port.in.result.BurndownDay;
+import io.github.arthursouto.prumo.application.port.in.result.SprintMetrics;
+import io.github.arthursouto.prumo.application.port.in.result.Velocity;
 import io.github.arthursouto.prumo.application.port.in.command.ListSprintsQuery;
 import io.github.arthursouto.prumo.application.port.in.command.PlanStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SprintCommand;
@@ -79,6 +85,12 @@ class SprintControllerTest {
     @Mock
     private PlanStoryUseCase planStory;
 
+    @Mock
+    private GetSprintMetricsUseCase sprintMetrics;
+
+    @Mock
+    private GetVelocityUseCase velocity;
+
     private MockMvc mockMvc;
     private final UUID userId = UUID.randomUUID();
     private final UUID workspaceId = UUID.randomUUID();
@@ -87,7 +99,7 @@ class SprintControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(new SprintController(
-                        listSprints, getSprint, createSprint, updateSprint, startSprint, closeSprint, deleteSprint, planStory))
+                        listSprints, getSprint, createSprint, updateSprint, startSprint, closeSprint, deleteSprint, planStory, sprintMetrics, velocity))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -212,5 +224,47 @@ class SprintControllerTest {
 
         verify(planStory).execute(new PlanStoryCommand(userId, workspaceId, "PRU-1", sprintId));
         verify(planStory).execute(new PlanStoryCommand(userId, workspaceId, "PRU-1", null));
+    }
+
+    @Test
+    void returnsTheBurndownOfASprint() throws Exception {
+        Sprint sprint = sprint();
+        sprint.start(20);
+        when(sprintMetrics.execute(new GetSprintQuery(userId, workspaceId, sprint.getId()))).thenReturn(new SprintMetrics(sprint, 20, List.of(
+                new BurndownDay(START, 20, 20, 4, 4, 20.0),
+                new BurndownDay(START.plusDays(1), null, null, null, null, 18.46))));
+
+        mockMvc.perform(get(base + "/sprints/" + sprint.getId() + "/metrics").principal(principal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sprintId").value(sprint.getId().toString()))
+                .andExpect(jsonPath("$.committedPoints").value(20))
+                .andExpect(jsonPath("$.baselinePoints").value(20))
+                .andExpect(jsonPath("$.burndown[0].date").value("2026-12-01"))
+                .andExpect(jsonPath("$.burndown[0].remainingPoints").value(20))
+                .andExpect(jsonPath("$.burndown[1].remainingPoints").doesNotExist())
+                .andExpect(jsonPath("$.burndown[1].idealPoints").value(18.46));
+    }
+
+    @Test
+    void returnsTheVelocityOfTheLatestClosedSprints() throws Exception {
+        Sprint sprint = sprint();
+        sprint.start(10);
+        sprint.close(8);
+        when(velocity.execute(new GetVelocityQuery(userId, workspaceId, 4))).thenReturn(new Velocity(List.of(sprint), 8.0, 10.0));
+
+        mockMvc.perform(get(base + "/sprints/velocity").principal(principal()).param("limit", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sprints[0].name").value("Sprint 7"))
+                .andExpect(jsonPath("$.sprints[0].committedPoints").value(10))
+                .andExpect(jsonPath("$.sprints[0].completedPoints").value(8))
+                .andExpect(jsonPath("$.averageCompleted").value(8.0));
+    }
+
+    @Test
+    void rejectsAVelocityOfTooManySprints() throws Exception {
+        mockMvc.perform(get(base + "/sprints/velocity").principal(principal()).param("limit", "21"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(velocity);
     }
 }

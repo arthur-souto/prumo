@@ -26,10 +26,12 @@ import io.github.arthursouto.prumo.application.port.in.ExchangeOAuthCodeUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetBoardUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetCurrentUserUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetGithubConnectionUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetSprintMetricsUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetSubtaskUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetUserIdentitiesUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetVelocityUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetWorkspaceUseCase;
 import io.github.arthursouto.prumo.application.port.in.IssueTokensUseCase;
 import io.github.arthursouto.prumo.application.port.in.LinkOAuthIdentityUseCase;
@@ -115,10 +117,12 @@ import io.github.arthursouto.prumo.application.usecase.ExchangeOAuthCodeService;
 import io.github.arthursouto.prumo.application.usecase.GetBoardService;
 import io.github.arthursouto.prumo.application.usecase.GetCurrentUserService;
 import io.github.arthursouto.prumo.application.usecase.GetGithubConnectionService;
+import io.github.arthursouto.prumo.application.usecase.GetSprintMetricsService;
 import io.github.arthursouto.prumo.application.usecase.GetSprintService;
 import io.github.arthursouto.prumo.application.usecase.GetStoryService;
 import io.github.arthursouto.prumo.application.usecase.GetSubtaskService;
 import io.github.arthursouto.prumo.application.usecase.GetUserIdentitiesService;
+import io.github.arthursouto.prumo.application.usecase.GetVelocityService;
 import io.github.arthursouto.prumo.application.usecase.GetWorkspaceService;
 import io.github.arthursouto.prumo.application.usecase.GithubTokens;
 import io.github.arthursouto.prumo.application.usecase.IssueTokensService;
@@ -741,6 +745,18 @@ public class UseCaseConfig {
                                     Clock clock,
                                     SprintProperties properties) {
         return new SprintSnapshots(storyRepository, snapshotRepository, views, clock, properties.timeZone());
+    }
+
+    @Bean
+    GetSprintMetricsUseCase getSprintMetricsUseCase(SprintLookup sprints,
+                                                    SprintSnapshotRepositoryPort snapshotRepository,
+                                                    SprintSnapshots snapshots) {
+        return new GetSprintMetricsService(sprints, snapshotRepository, snapshots);
+    }
+
+    @Bean
+    GetVelocityUseCase getVelocityUseCase(WorkspaceAccess access, SprintRepositoryPort sprintRepository) {
+        return new GetVelocityService(access, sprintRepository);
     }
 
     @Bean
