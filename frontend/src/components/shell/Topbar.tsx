@@ -4,9 +4,11 @@ import { ChevronRight, Menu, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { StorySuggestions, useStorySuggestions } from "@/components/search/StorySuggestions";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useT } from "@/i18n/client";
+import type { Story } from "@/lib/board-types";
 import { UserMenu } from "./UserMenu";
 import styles from "./shell.module.css";
 
@@ -30,6 +32,8 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
   const pathname = usePathname();
   const input = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  const target = pathname.endsWith("/backlog") ? "backlog" : "board";
+  const suggestions = useStorySuggestions(workspaceId, query, workspaceId ? openStory : undefined);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -53,8 +57,13 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
       return;
     }
 
-    const target = pathname.endsWith("/backlog") ? "backlog" : "board";
     router.push(`/workspaces/${workspaceId}/${target}${suffix}`);
+  }
+
+  function openStory(story: Story) {
+    setQuery("");
+    input.current?.blur();
+    router.push(`/workspaces/${workspaceId}/${target}?story=${encodeURIComponent(story.key)}`);
   }
 
   function create() {
@@ -91,11 +100,16 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
           value={query}
           placeholder={t("topbar.searchPlaceholder")}
           aria-label={t("topbar.searchLabel")}
-          onChange={(event) => setQuery(event.target.value)}
+          {...suggestions.inputProps}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            suggestions.reopen();
+          }}
         />
         <kbd className={styles.kbd} aria-hidden="true">
           /
         </kbd>
+        <StorySuggestions {...suggestions.list} />
       </form>
 
       <div className={styles.topbarRight}>

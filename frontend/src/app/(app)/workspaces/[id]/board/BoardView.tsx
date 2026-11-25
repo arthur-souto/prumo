@@ -40,6 +40,7 @@ import settings from "../workspace.module.css";
 import { BoardColumn } from "./BoardColumn";
 import { CardContent } from "./StoryCard";
 import { StoryDrawer } from "./StoryDrawer";
+import { useStoryParam } from "../useStoryParam";
 import styles from "./board.module.css";
 
 type BoardViewProps = {
@@ -78,6 +79,7 @@ export function BoardView({
   const [filters, setFilters] = useState<Filters>({ ...EMPTY_FILTERS, text: params.get("q") ?? "" });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [storyKey, clearStoryKey] = useStoryParam();
   const [creatingIn, setCreatingIn] = useState<string | null>(null);
   const [dialog, setDialog] = useState<ColumnDialog>(null);
   const toast = useToast();
@@ -121,6 +123,24 @@ export function BoardView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [creatingIn, dialog, selectedId]);
+
+  useEffect(() => {
+    if (!storyKey) return;
+
+    const found = Object.values(stories).find((story) => story.key.toUpperCase() === storyKey.toUpperCase());
+
+    if (found) {
+      setSelectedId(found.id);
+    } else {
+      toast({ tone: "danger", title: t("errors.notFound") });
+      clearStoryKey();
+    }
+  }, [storyKey, stories, clearStoryKey, toast, t]);
+
+  function closeStory() {
+    setSelectedId(null);
+    clearStoryKey();
+  }
 
   const filtering = hasFilters(filters);
   const labels = useMemo(() => allLabels(Object.values(stories)), [stories]);
@@ -589,9 +609,9 @@ export function BoardView({
               ...current,
               [selected.columnId]: (current[selected.columnId] ?? []).filter((id) => id !== selected.id),
             }));
-            setSelectedId(null);
+            closeStory();
           }}
-          onClose={() => setSelectedId(null)}
+          onClose={closeStory}
         />
       ) : null}
     </div>

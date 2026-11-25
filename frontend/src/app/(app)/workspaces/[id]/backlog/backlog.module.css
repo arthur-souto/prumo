@@ -5,13 +5,6 @@
   padding-bottom: var(--space-12);
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .count {
   margin-left: auto;
   color: var(--text-subtlest);
@@ -136,4 +129,21 @@
   gap: var(--space-4);
   padding: var(--space-3);
   border-top: var(--border-width) solid var(--border-default);
+}
+
+.stale {
+  opacity: 0.6;
+  transition: opacity 120ms ease;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.pageInfo {
+  color: var(--text-subtlest);
+  font-size: var(--font-size-sm);
 }

@@ -1,20 +1,37 @@
 "use client";
 
-import { ListChecks, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListChecks, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { IconButton } from "@/components/ui/IconButton";
 import { Select } from "@/components/ui/Select";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { errorMessage, useT } from "@/i18n/client";
 import { PRIORITIES, type Board, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
-import { EMPTY_FILTERS, allLabels, hasFilters, matchesFilters, type Filters } from "@/lib/board-utils";
+import { allLabels } from "@/lib/board-utils";
 import { sendJson } from "@/lib/client";
+import {
+  DEFAULT_STORY_ORDER,
+  STORY_ORDERS,
+  hasStoryFilters,
+  storySearchQuery,
+  type StoryOrder,
+  type StoryPage,
+} from "@/lib/story-filters";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { StoryDrawer } from "../board/StoryDrawer";
+import { StoryFilterBar } from "../StoryFilterBar";
+import { useStoryFilters } from "../useStoryFilters";
+import { useStoryParam } from "../useStoryParam";
 import styles from "./backlog.module.css";
+
+const PAGE_SIZE = 25;
+const SEARCH_DELAY = 300;
 
 type BacklogViewProps = {
   workspaceId: string;
@@ -28,38 +45,95 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
   const t = useT();
   const toast = useToast();
   const base = `/api/workspaces/${workspaceId}`;
-  const params = useSearchParams();
-  const [stories, setStories] = useState<Record<string, Story>>(() => Object.fromEntries(board.stories.map((story) => [story.id, story])));
+  const [filters, setFilters] = useStoryFilters();
+  const [order, setOrder] = useState<StoryOrder>(DEFAULT_STORY_ORDER);
+  const [paging, setPaging] = useState({ key: "", page: 0 });
+  const [result, setResult] = useState<StoryPage | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [repositories, setRepositories] = useState(initialRepositories);
-  const [filters, setFilters] = useState<Filters>({ ...EMPTY_FILTERS, text: params.get("q") ?? "" });
-  const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [opened, setOpened] = useState<Story | null>(null);
+  const [storyKey, clearStoryKey] = useStoryParam();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const selectAll = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setFilters((current) => ({ ...current, text: params.get("q") ?? "" }));
-  }, [params]);
-
   const columns = useMemo(() => [...board.columns].sort((a, b) => a.position - b.position), [board.columns]);
-  const columnById = useMemo(() => new Map(columns.map((column) => [column.id, column])), [columns]);
-  const labels = useMemo(() => allLabels(Object.values(stories)), [stories]);
+  const labels = useMemo(() => allLabels(board.stories), [board.stories]);
+  const text = useDebouncedValue(filters.text, SEARCH_DELAY);
+  const applied = useMemo(() => ({ ...filters, text }), [filters, text]);
+  const searchKey = useMemo(() => storySearchQuery(applied, order, 0, PAGE_SIZE), [applied, order]);
+  const page = paging.key === searchKey ? paging.page : 0;
+  const query = useMemo(() => storySearchQuery(applied, order, page, PAGE_SIZE), [applied, order, page]);
+  const setPage = useCallback((next: number) => setPaging({ key: searchKey, page: next }), [searchKey]);
 
-  const rows = useMemo(() => {
-    const order = new Map(columns.map((column) => [column.id, column.position]));
+  useEffect(() => {
+    let current = true;
+    setLoading(true);
+    setFailed(false);
 
-    return Object.values(stories)
-      .filter((story) => matchesFilters(story, filters) && (status === "" || story.columnId === status))
-      .sort((a, b) => (order.get(a.columnId) ?? 0) - (order.get(b.columnId) ?? 0) || b.createdAt.localeCompare(a.createdAt));
-  }, [stories, filters, status, columns]);
+    sendJson<StoryPage>(`${base}/stories?${query}`, "GET").then((response) => {
+      if (!current) return;
 
-  const visibleIds = useMemo(() => new Set(rows.map((story) => story.id)), [rows]);
-  const chosen = useMemo(() => [...selected].filter((id) => visibleIds.has(id)), [selected, visibleIds]);
+      setLoading(false);
+
+      if (!response.ok || !response.data) {
+        setFailed(true);
+        return;
+      }
+
+      const data = response.data;
+
+      if (data.items.length === 0 && data.page > 0 && data.totalPages > 0) {
+        setPage(data.totalPages - 1);
+        return;
+      }
+
+      setResult(data);
+      setStories(data.items);
+      setSelected(new Set());
+    });
+
+    return () => {
+      current = false;
+    };
+  }, [base, query, reloadKey, setPage]);
+
+  const rows = stories;
+  const chosen = useMemo(() => rows.filter((story) => selected.has(story.id)).map((story) => story.id), [rows, selected]);
   const allChecked = rows.length > 0 && chosen.length === rows.length;
-  const filtering = hasFilters(filters) || status !== "";
+  const filtering = hasStoryFilters(applied);
+  const reload = useCallback(() => setReloadKey((key) => key + 1), []);
+
+  useEffect(() => {
+    if (!storyKey) return;
+
+    let current = true;
+
+    sendJson<Story>(`${base}/stories/${encodeURIComponent(storyKey)}`, "GET").then((response) => {
+      if (!current) return;
+
+      if (response.ok && response.data) {
+        setOpened(response.data);
+      } else {
+        toast({ tone: "danger", title: errorMessage(t, response.code, response.reason) });
+        clearStoryKey();
+      }
+    });
+
+    return () => {
+      current = false;
+    };
+  }, [base, storyKey, clearStoryKey, toast, t]);
+
+  function closeStory() {
+    setOpened(null);
+    clearStoryKey();
+  }
 
   useEffect(() => {
     if (selectAll.current) {
@@ -67,7 +141,10 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
     }
   }, [chosen.length, allChecked]);
 
-  const upsert = useCallback((story: Story) => setStories((current) => ({ ...current, [story.id]: story })), []);
+  const upsert = useCallback((story: Story) => {
+    setStories((current) => current.map((candidate) => (candidate.id === story.id ? story : candidate)));
+    setOpened((current) => (current?.id === story.id ? story : current));
+  }, []);
 
   const reloadRepositories = useCallback(async () => {
     const result = await sendJson<Repository[]>(`${base}/repositories`, "GET");
@@ -119,7 +196,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
   }
 
   async function bulk(action: (story: Story) => Promise<boolean>) {
-    const targets = chosen.map((id) => stories[id]).filter(Boolean);
+    const targets = rows.filter((story) => selected.has(story.id));
     setBulkBusy(true);
     const results = await Promise.all(targets.map(action));
     setBulkBusy(false);
@@ -134,7 +211,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
   }
 
   async function bulkDelete() {
-    const targets = chosen.map((id) => stories[id]).filter(Boolean);
+    const targets = rows.filter((story) => selected.has(story.id));
     setBulkBusy(true);
     const results = await Promise.all(
       targets.map(async (story) => {
@@ -146,8 +223,8 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
     setConfirmingDelete(false);
 
     const removed = new Set(results.filter((id): id is string => id !== null));
-    setStories((current) => Object.fromEntries(Object.entries(current).filter(([id]) => !removed.has(id))));
-    setSelected((current) => new Set([...current].filter((id) => !removed.has(id))));
+    setSelected(new Set());
+    reload();
 
     if (removed.size === targets.length) {
       toast({ tone: "success", title: t("backlog.deleted", { count: removed.size }) });
@@ -165,10 +242,9 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
     });
   }
 
-  const open = openId ? stories[openId] : undefined;
-  const total = Object.keys(stories).length;
+  const open = opened ? (rows.find((story) => story.id === opened.id) ?? opened) : undefined;
 
-  if (total === 0) {
+  if (result && result.totalItems === 0 && !filtering && !loading) {
     return (
       <EmptyState
         icon={<ListChecks size={20} aria-hidden="true" />}
@@ -185,61 +261,48 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
     );
   }
 
+  const from = result && result.totalItems > 0 ? result.page * result.size + 1 : 0;
+  const to = result ? result.page * result.size + rows.length : 0;
+
   return (
     <div className={styles.view}>
-      <div className={styles.filters}>
-        <Select compact variant="quiet" value={status} aria-label={t("backlog.status")} onChange={(event) => setStatus(event.target.value)}>
-          <option value="">{t("backlog.allStatuses")}</option>
-          {columns.map((column) => (
-            <option key={column.id} value={column.id}>
-              {column.name}
-            </option>
-          ))}
-        </Select>
+      <StoryFilterBar filters={filters} onChange={setFilters} labels={labels} members={members} columns={columns} workspaceId={workspaceId} onPick={setOpened}>
         <Select
           compact
           variant="quiet"
-          value={filters.priority}
-          aria-label={t("backlog.priority")}
-          onChange={(event) => setFilters({ ...filters, priority: event.target.value as Priority | "" })}
+          value={order}
+          aria-label={t("filters.orderLabel")}
+          onChange={(event) => setOrder(event.target.value as StoryOrder)}
         >
-          <option value="">{t("board.allPriorities")}</option>
-          {PRIORITIES.map((value) => (
+          {STORY_ORDERS.map((value) => (
             <option key={value} value={value}>
-              {t(`priority.${value}`)}
+              {t(`filters.order.${value}`)}
             </option>
           ))}
         </Select>
-        <Select compact variant="quiet" value={filters.label} aria-label={t("story.labels")} onChange={(event) => setFilters({ ...filters, label: event.target.value })}>
-          <option value="">{t("board.allLabels")}</option>
-          {labels.map((label) => (
-            <option key={label} value={label}>
-              {label}
-            </option>
-          ))}
-        </Select>
-        {filtering ? (
-          <Button
-            appearance="subtle"
-            size="sm"
-            icon={<X size={14} aria-hidden="true" />}
-            onClick={() => {
-              setFilters(EMPTY_FILTERS);
-              setStatus("");
-            }}
-          >
-            {t("board.clearFilters")}
-          </Button>
+        {result ? (
+          <span className={styles.count} role="status">
+            {t("backlog.range", { from, to, total: result.totalItems })}
+          </span>
         ) : null}
-        <span className={styles.count} role="status">
-          {t("backlog.showing", { shown: rows.length, total })}
-        </span>
-      </div>
+      </StoryFilterBar>
 
-      {rows.length === 0 ? (
-        <EmptyState icon={<ListChecks size={20} aria-hidden="true" />} title={filters.text.trim() ? t("backlog.noMatch", { query: filters.text.trim() }) : t("board.noMatchColumn")} compact />
+      {failed ? (
+        <ErrorState compact onRetry={reload} />
+      ) : !result ? (
+        <div className={styles.wrap} aria-busy="true">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div key={index} className={styles.skeletonRow}>
+              <Skeleton width="4rem" />
+              <Skeleton width="60%" />
+              <Skeleton width="6rem" />
+            </div>
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyState icon={<ListChecks size={20} aria-hidden="true" />} title={text.trim() ? t("backlog.noMatch", { query: text.trim() }) : t("board.noMatchColumn")} compact />
       ) : (
-        <div className={styles.wrap}>
+        <div className={`${styles.wrap} ${loading ? styles.stale : ""}`} aria-busy={loading || undefined}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -278,7 +341,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
                     </td>
                     <td className={styles.key}>{story.key}</td>
                     <td className={styles.titleCell}>
-                      <button type="button" className={styles.titleButton} onClick={() => setOpenId(story.id)}>
+                      <button type="button" className={styles.titleButton} onClick={() => setOpened(story)}>
                         {story.title}
                       </button>
                       {story.labels.length > 0 ? (
@@ -331,6 +394,26 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
           </table>
         </div>
       )}
+
+      {result && result.totalPages > 1 ? (
+        <nav className={styles.pager} aria-label={t("pagination.label")}>
+          <IconButton
+            size="sm"
+            label={t("pagination.previous")}
+            icon={<ChevronLeft size={16} aria-hidden="true" />}
+            disabled={page === 0 || loading}
+            onClick={() => setPage(page - 1)}
+          />
+          <span className={styles.pageInfo}>{t("pagination.page", { page: page + 1, pages: result.totalPages })}</span>
+          <IconButton
+            size="sm"
+            label={t("pagination.next")}
+            icon={<ChevronRight size={16} aria-hidden="true" />}
+            disabled={page + 1 >= result.totalPages || loading}
+            onClick={() => setPage(page + 1)}
+          />
+        </nav>
+      ) : null}
 
       {chosen.length > 0 ? (
         <div className={styles.bulkBar} role="region" aria-label={t("backlog.bulkLabel")}>
@@ -401,10 +484,10 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
           onMoveToColumn={moveToColumn}
           onRepositoriesChanged={reloadRepositories}
           onDeleted={() => {
-            setStories((current) => Object.fromEntries(Object.entries(current).filter(([id]) => id !== open.id)));
-            setOpenId(null);
+            closeStory();
+            reload();
           }}
-          onClose={() => setOpenId(null)}
+          onClose={closeStory}
         />
       ) : null}
     </div>

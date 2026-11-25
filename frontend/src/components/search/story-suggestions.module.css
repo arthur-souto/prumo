@@ -1,0 +1,49 @@
+.list {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: var(--z-popover);
+  width: max(100%, 26rem);
+  max-width: calc(100vw - var(--space-8));
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-default);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.active {
+  background: var(--surface-hover);
+}
+
+.key {
+  flex-shrink: 0;
+  color: var(--text-subtlest);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--space-2);
+  color: var(--text-subtlest);
+  font-size: var(--font-size-sm);
+}
