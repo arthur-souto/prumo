@@ -3,13 +3,16 @@ package io.github.arthursouto.prumo.infrastructure.adapter.in.web.controller;
 import io.github.arthursouto.prumo.application.port.in.CloseSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.CreateSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.DeleteSprintUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetSprintMetricsUseCase;
 import io.github.arthursouto.prumo.application.port.in.GetSprintUseCase;
+import io.github.arthursouto.prumo.application.port.in.GetVelocityUseCase;
 import io.github.arthursouto.prumo.application.port.in.ListSprintsUseCase;
 import io.github.arthursouto.prumo.application.port.in.PlanStoryUseCase;
 import io.github.arthursouto.prumo.application.port.in.StartSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.UpdateSprintUseCase;
 import io.github.arthursouto.prumo.application.port.in.command.CreateSprintCommand;
 import io.github.arthursouto.prumo.application.port.in.command.GetSprintQuery;
+import io.github.arthursouto.prumo.application.port.in.command.GetVelocityQuery;
 import io.github.arthursouto.prumo.application.port.in.command.ListSprintsQuery;
 import io.github.arthursouto.prumo.application.port.in.command.PlanStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SprintCommand;
@@ -18,9 +21,12 @@ import io.github.arthursouto.prumo.infrastructure.adapter.in.web.api.SprintApi;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.PageResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.PlanStoryRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintMetricsResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintResponse;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.SprintSearchRequest;
 import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.StoryResponse;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.VelocityRequest;
+import io.github.arthursouto.prumo.infrastructure.adapter.in.web.dto.VelocityResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,6 +45,8 @@ public class SprintController implements SprintApi {
     private final CloseSprintUseCase closeSprint;
     private final DeleteSprintUseCase deleteSprint;
     private final PlanStoryUseCase planStory;
+    private final GetSprintMetricsUseCase sprintMetrics;
+    private final GetVelocityUseCase velocity;
 
     public SprintController(ListSprintsUseCase listSprints,
                             GetSprintUseCase getSprint,
@@ -47,7 +55,9 @@ public class SprintController implements SprintApi {
                             StartSprintUseCase startSprint,
                             CloseSprintUseCase closeSprint,
                             DeleteSprintUseCase deleteSprint,
-                            PlanStoryUseCase planStory) {
+                            PlanStoryUseCase planStory,
+                            GetSprintMetricsUseCase sprintMetrics,
+                            GetVelocityUseCase velocity) {
         this.listSprints = listSprints;
         this.getSprint = getSprint;
         this.createSprint = createSprint;
@@ -56,6 +66,8 @@ public class SprintController implements SprintApi {
         this.closeSprint = closeSprint;
         this.deleteSprint = deleteSprint;
         this.planStory = planStory;
+        this.sprintMetrics = sprintMetrics;
+        this.velocity = velocity;
     }
 
     @Override
@@ -68,6 +80,16 @@ public class SprintController implements SprintApi {
                 search.page(),
                 search.size()
         )), SprintResponse::from);
+    }
+
+    @Override
+    public VelocityResponse velocity(Authentication authentication, UUID workspaceId, VelocityRequest request) {
+        return VelocityResponse.from(velocity.execute(new GetVelocityQuery(userId(authentication), workspaceId, request.limit())));
+    }
+
+    @Override
+    public SprintMetricsResponse metrics(Authentication authentication, UUID workspaceId, UUID sprintId) {
+        return SprintMetricsResponse.from(sprintMetrics.execute(new GetSprintQuery(userId(authentication), workspaceId, sprintId)));
     }
 
     @Override
