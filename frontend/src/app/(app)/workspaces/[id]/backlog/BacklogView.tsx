@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, ListChecks, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -19,11 +20,13 @@ import {
   DEFAULT_STORY_ORDER,
   STORY_ORDERS,
   hasStoryFilters,
+  readPage,
+  readStoryOrder,
   storySearchQuery,
   type StoryOrder,
   type StoryPage,
 } from "@/lib/story-filters";
-import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { replaceSearchParams } from "@/lib/url-state";
 import { StoryDrawer } from "../board/StoryDrawer";
 import { StoryFilterBar } from "../StoryFilterBar";
 import { useStoryFilters } from "../useStoryFilters";
@@ -31,7 +34,6 @@ import { useStoryParam } from "../useStoryParam";
 import styles from "./backlog.module.css";
 
 const PAGE_SIZE = 25;
-const SEARCH_DELAY = 300;
 
 type BacklogViewProps = {
   workspaceId: string;
@@ -45,9 +47,10 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
   const t = useT();
   const toast = useToast();
   const base = `/api/workspaces/${workspaceId}`;
-  const [filters, setFilters] = useStoryFilters();
-  const [order, setOrder] = useState<StoryOrder>(DEFAULT_STORY_ORDER);
-  const [paging, setPaging] = useState({ key: "", page: 0 });
+  const { filters, applied, setFilters } = useStoryFilters();
+  const params = useSearchParams();
+  const order = readStoryOrder(params);
+  const page = readPage(params);
   const [result, setResult] = useState<StoryPage | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,12 +67,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
 
   const columns = useMemo(() => [...board.columns].sort((a, b) => a.position - b.position), [board.columns]);
   const labels = useMemo(() => allLabels(board.stories), [board.stories]);
-  const text = useDebouncedValue(filters.text, SEARCH_DELAY);
-  const applied = useMemo(() => ({ ...filters, text }), [filters, text]);
-  const searchKey = useMemo(() => storySearchQuery(applied, order, 0, PAGE_SIZE), [applied, order]);
-  const page = paging.key === searchKey ? paging.page : 0;
   const query = useMemo(() => storySearchQuery(applied, order, page, PAGE_SIZE), [applied, order, page]);
-  const setPage = useCallback((next: number) => setPaging({ key: searchKey, page: next }), [searchKey]);
 
   useEffect(() => {
     let current = true;
@@ -101,7 +99,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
     return () => {
       current = false;
     };
-  }, [base, query, reloadKey, setPage]);
+  }, [base, query, reloadKey]);
 
   const rows = stories;
   const chosen = useMemo(() => rows.filter((story) => selected.has(story.id)).map((story) => story.id), [rows, selected]);
@@ -129,6 +127,21 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
       current = false;
     };
   }, [base, storyKey, clearStoryKey, toast, t]);
+
+  function setOrder(next: StoryOrder) {
+    replaceSearchParams((current) => {
+      if (next === DEFAULT_STORY_ORDER) current.delete("sort");
+      else current.set("sort", next);
+      current.delete("page");
+    });
+  }
+
+  function setPage(next: number) {
+    replaceSearchParams((current) => {
+      if (next > 0) current.set("page", String(next + 1));
+      else current.delete("page");
+    });
+  }
 
   function closeStory() {
     setOpened(null);
@@ -300,7 +313,7 @@ export function BacklogView({ workspaceId, board, repositories: initialRepositor
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <EmptyState icon={<ListChecks size={20} aria-hidden="true" />} title={text.trim() ? t("backlog.noMatch", { query: text.trim() }) : t("board.noMatchColumn")} compact />
+        <EmptyState icon={<ListChecks size={20} aria-hidden="true" />} title={applied.text ? t("backlog.noMatch", { query: applied.text }) : t("board.noMatchColumn")} compact />
       ) : (
         <div className={`${styles.wrap} ${loading ? styles.stale : ""}`} aria-busy={loading || undefined}>
           <table className={styles.table}>

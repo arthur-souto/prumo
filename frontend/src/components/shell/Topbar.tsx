@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useT } from "@/i18n/client";
 import type { Story } from "@/lib/board-types";
+import { replaceSearchParams } from "@/lib/url-state";
 import { UserMenu } from "./UserMenu";
 import styles from "./shell.module.css";
 
@@ -57,13 +58,31 @@ export function Topbar({ user, workspaceId, crumbs, onOpenMenu }: TopbarProps) {
       return;
     }
 
-    router.push(`/workspaces/${workspaceId}/${target}${suffix}`);
+    const path = `/workspaces/${workspaceId}/${target}`;
+
+    if (pathname === path) {
+      replaceSearchParams((current) => {
+        if (term) current.set("q", term);
+        else current.delete("q");
+        current.delete("page");
+      });
+      return;
+    }
+
+    router.push(`${path}${suffix}`);
   }
 
   function openStory(story: Story) {
     setQuery("");
     input.current?.blur();
-    router.push(`/workspaces/${workspaceId}/${target}?story=${encodeURIComponent(story.key)}`);
+    const path = `/workspaces/${workspaceId}/${target}`;
+
+    if (pathname === path) {
+      replaceSearchParams((current) => current.set("story", story.key));
+      return;
+    }
+
+    router.push(`${path}?story=${encodeURIComponent(story.key)}`);
   }
 
   function create() {

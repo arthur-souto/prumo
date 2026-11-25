@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/Alert";
 import { useToast } from "@/components/ui/Toast";
@@ -27,6 +27,7 @@ import { allLabels, buildLayout, neighbours, type Layout } from "@/lib/board-uti
 import { PRIORITIES, type Board, type Column, type Member, type Priority, type Repository, type Story } from "@/lib/board-types";
 import { hasStoryFilters, matchesStoryFilters } from "@/lib/story-filters";
 import { sendJson } from "@/lib/client";
+import { replaceSearchParams } from "@/lib/url-state";
 import modal from "../../../modal-form.module.css";
 import settings from "../workspace.module.css";
 import { BoardColumn } from "./BoardColumn";
@@ -68,9 +69,8 @@ export function BoardView({
   );
   const [layout, setLayout] = useState<Layout>(() => buildLayout(initialBoard));
   const [repositories, setRepositories] = useState(initialRepositories);
-  const router = useRouter();
   const params = useSearchParams();
-  const [filters, setFilters] = useStoryFilters();
+  const { filters, setFilters } = useStoryFilters();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [storyKey, clearStoryKey] = useStoryParam();
@@ -96,9 +96,9 @@ export function BoardView({
   useEffect(() => {
     if (params.get("create") === "1") {
       setCreatingIn("first");
-      router.replace(`/workspaces/${workspaceId}/board`);
+      replaceSearchParams((current) => current.delete("create"));
     }
-  }, [params, router, workspaceId]);
+  }, [params]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {

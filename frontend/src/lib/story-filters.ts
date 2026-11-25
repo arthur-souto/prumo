@@ -1,4 +1,4 @@
-import type { Priority, Story } from "./board-types";
+import { PRIORITIES, type Priority, type Story } from "./board-types";
 
 export type StoryFilters = {
   text: string;
@@ -113,4 +113,44 @@ export function matchesStoryFilters(story: Story, filters: StoryFilters) {
     story.key.toLowerCase().includes(text) ||
     normalizeText(story.description ?? "").includes(text)
   );
+}
+
+const NO_ASSIGNEE = "none";
+
+export function readStoryFilters(params: URLSearchParams): StoryFilters {
+  const assignees = params.getAll("assignee");
+
+  return {
+    text: params.get("q") ?? "",
+    priorities: params.getAll("priority").filter((value): value is Priority => (PRIORITIES as string[]).includes(value)),
+    labels: params.getAll("label").filter((value) => value.trim() !== ""),
+    columnIds: params.getAll("column").filter((value) => value !== ""),
+    assigneeIds: assignees.filter((value) => value !== "" && value !== NO_ASSIGNEE),
+    unassigned: assignees.includes(NO_ASSIGNEE),
+  };
+}
+
+export function writeStoryFilters(params: URLSearchParams, filters: StoryFilters) {
+  for (const key of ["q", "priority", "label", "column", "assignee", "page"]) {
+    params.delete(key);
+  }
+
+  const text = filters.text.trim();
+
+  if (text) params.set("q", text);
+  filters.priorities.forEach((priority) => params.append("priority", priority));
+  filters.labels.forEach((label) => params.append("label", label));
+  filters.columnIds.forEach((columnId) => params.append("column", columnId));
+  filters.assigneeIds.forEach((assigneeId) => params.append("assignee", assigneeId));
+  if (filters.unassigned) params.append("assignee", NO_ASSIGNEE);
+}
+
+export function readStoryOrder(params: URLSearchParams): StoryOrder {
+  const value = params.get("sort");
+  return STORY_ORDERS.includes(value as StoryOrder) ? (value as StoryOrder) : DEFAULT_STORY_ORDER;
+}
+
+export function readPage(params: URLSearchParams) {
+  const value = Number(params.get("page"));
+  return Number.isInteger(value) && value > 1 ? value - 1 : 0;
 }
