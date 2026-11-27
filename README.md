@@ -209,6 +209,8 @@ Por padrão tudo responde só em `localhost`: o front (`npm run dev`), o backend
 
 O front fala inglês e português. O idioma vem do cookie `prumo_lang`; na primeira visita é escolhido pelo `Accept-Language` do navegador (qualquer variante de `pt` vira português, o resto vira inglês). O seletor fica no rodapé do login/cadastro e na barra superior. O BFF repassa o idioma ao backend, então as mensagens de validação também mudam. Os textos ficam em `frontend/src/i18n/en.ts` e `pt.ts`: para adicionar um idioma, crie o catálogo novo (o TypeScript exige as mesmas chaves do inglês) e registre-o em `core.ts`.
 
+Uma mensagem que depende de um número pode ter duas formas: `{ one: "{count} história", other: "{count} histórias" }`. A forma `one` vale só para 1, e qualquer outro número usa `other` ("0 histórias", como se diz em inglês e no português do Brasil). O número é o `count`; quando a concordância depende de outro valor, ele é indicado em `by`, como em `{ by: "failed", one: "{failed} de {count} não pôde…", other: "…" }`. Cada idioma usa plural onde a gramática pede, mesmo que o inglês não use: "{count} selected" é texto simples em inglês, mas tem duas formas em português ("1 selecionada", "2 selecionadas").
+
 ### Banco de dados
 
 Suba o PostgreSQL local (usa o mesmo `.env`):

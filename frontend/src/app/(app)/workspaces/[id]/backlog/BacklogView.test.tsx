@@ -133,9 +133,9 @@ describe("BacklogView", () => {
       await user.click(await screen.findByRole("checkbox", { name: "Select PRU-1" }));
       await user.click(screen.getByRole("button", { name: "Delete" }));
       expect(requests(fetch, "DELETE")).toHaveLength(0);
-      await user.click(within(screen.getByRole("dialog", { name: "Delete 1 stories?" })).getByRole("button", { name: "Delete" }));
+      await user.click(within(screen.getByRole("dialog", { name: "Delete 1 story?" })).getByRole("button", { name: "Delete" }));
 
-      expect(await screen.findByText("1 stories deleted")).toBeInTheDocument();
+      expect(await screen.findByText("1 story deleted")).toBeInTheDocument();
       await waitFor(() => expect(screen.queryByRole("button", { name: "A" })).not.toBeInTheDocument());
       expect(requests(fetch, "GET", STORIES)).toHaveLength(2);
       expect(screen.queryByRole("region", { name: "Bulk actions" })).not.toBeInTheDocument();
