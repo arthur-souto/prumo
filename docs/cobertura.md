@@ -76,4 +76,16 @@ Por subir a aplicação, ele também cobre `infrastructure.config` (wiring dos c
 
 ## Front end
 
-**Sem testes e sem runner configurado** (0% de ~10,7 mil linhas em `frontend/src`). O `package.json` só tem `typecheck`. O runner entra na PRU-27 e os testes dos fluxos críticos (backlog, quadro, detalhe) na PRU-28.
+Runner configurado na PRU-27: Vitest com jsdom e Testing Library (`npm run coverage` em `frontend/`). Como usar está no README, em *Testes do front*.
+
+| PR | Statements | Branches | Linhas | Testes |
+|---|---:|---:|---:|---:|
+| PRU-27 (runner e testes de exemplo) | 2,5% | 2,8% | 2,6% | 18 |
+
+Os testes de exemplo cobrem:
+- as traduções: o português tem as mesmas chaves e os mesmos placeholders do inglês;
+- `board-utils`;
+- `sendJson`;
+- o `ConfirmDialog`, que confirma que portais do Radix, teclado e i18n funcionam no jsdom.
+
+Os fluxos críticos (backlog, quadro e detalhe) entram na PRU-28.
