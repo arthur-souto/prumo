@@ -5,9 +5,13 @@ import io.github.arthursouto.prumo.application.exceptions.GithubIntegrationExcep
 import io.github.arthursouto.prumo.application.port.in.command.ConnectRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.CreateStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.DisconnectRepositoryCommand;
+import io.github.arthursouto.prumo.application.port.in.command.GetGithubConnectionQuery;
+import io.github.arthursouto.prumo.application.port.in.command.ListConnectedRepositoriesQuery;
 import io.github.arthursouto.prumo.application.port.in.command.LinkStoryRepositoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.ListAccessibleRepositoriesQuery;
+import io.github.arthursouto.prumo.application.port.in.command.RemoveGithubTokenCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SaveGithubTokenCommand;
+import io.github.arthursouto.prumo.application.port.in.command.SyncWorkspacePullRequestsCommand;
 import io.github.arthursouto.prumo.application.port.out.ConnectedRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubConnectionRepositoryPort;
 import io.github.arthursouto.prumo.application.port.out.GithubPort;
@@ -41,8 +45,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +72,9 @@ class GithubServicesTest {
 
     @Mock
     private GithubPort github;
+
+    @Mock
+    private PullRequestSyncer syncer;
 
     private final UUID ownerId = UUID.randomUUID();
     private final UUID memberId = UUID.randomUUID();
@@ -251,5 +260,67 @@ class GithubServicesTest {
                 .execute(new CreateStoryRepositoryCommand(memberId, workspace.getId(), "PRU-12", "x", null, false)))
                 .isInstanceOf(ForbiddenException.class);
         verify(github, never()).createRepository(any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void theConnectionIsReadByUserAndIsEmptyWithoutAToken() {
+        GithubConnection connection = new GithubConnection(ownerId, "cipher", "arthur", clock.instant());
+        when(connectionRepository.findByUserId(ownerId)).thenReturn(Optional.of(connection));
+        when(connectionRepository.findByUserId(memberId)).thenReturn(Optional.empty());
+        GetGithubConnectionService service = new GetGithubConnectionService(connectionRepository);
+
+        assertThat(service.execute(new GetGithubConnectionQuery(ownerId))).contains(connection);
+        assertThat(service.execute(new GetGithubConnectionQuery(memberId))).isEmpty();
+    }
+
+    @Test
+    void removingTheTokenDeletesOnlyTheConnectionOfThatUser() {
+        new RemoveGithubTokenService(connectionRepository).execute(new RemoveGithubTokenCommand(memberId));
+
+        verify(connectionRepository).deleteByUserId(memberId);
+        verify(connectionRepository, never()).deleteByUserId(ownerId);
+    }
+
+    @Test
+    void anyMemberListsTheConnectedRepositoriesOfTheWorkspace() {
+        when(repositoryPort.findAllByWorkspaceId(workspace.getId())).thenReturn(List.of(repository));
+
+        assertThat(new ListConnectedRepositoriesService(access, repositoryPort)
+                .execute(new ListConnectedRepositoriesQuery(memberId, workspace.getId()))).containsExactly(repository);
+    }
+
+    @Test
+    void strangersCannotListTheConnectedRepositories() {
+        assertThatThrownBy(() -> new ListConnectedRepositoriesService(access, repositoryPort)
+                .execute(new ListConnectedRepositoriesQuery(UUID.randomUUID(), workspace.getId())))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(repositoryPort, never()).findAllByWorkspaceId(any());
+    }
+
+    @Test
+    void syncingTheWorkspaceSyncsEachRepositoryAndReturnsThemAfterTheSync() {
+        ConnectedRepository other = ConnectedRepository.connect(workspace.getId(), "arthur", "docs", "main", "u", ownerId);
+        ConnectedRepository synced = ConnectedRepository.restore(repository.getId(), workspace.getId(), "arthur", "prumo",
+                "main", "u", ownerId, clock.instant(), clock.instant(), null, "\"etag\"");
+        when(repositoryPort.findAllByWorkspaceId(workspace.getId()))
+                .thenReturn(List.of(repository, other))
+                .thenReturn(List.of(synced, other));
+
+        List<ConnectedRepository> result = new SyncWorkspacePullRequestsService(access, repositoryPort, syncer)
+                .execute(new SyncWorkspacePullRequestsCommand(memberId, workspace.getId()));
+
+        var order = inOrder(syncer);
+        order.verify(syncer).sync(repository);
+        order.verify(syncer).sync(other);
+        // the answer is read again, so it carries the sync time and errors recorded by the syncer
+        assertThat(result).containsExactly(synced, other);
+    }
+
+    @Test
+    void strangersCannotSyncTheWorkspace() {
+        assertThatThrownBy(() -> new SyncWorkspacePullRequestsService(access, repositoryPort, syncer)
+                .execute(new SyncWorkspacePullRequestsCommand(UUID.randomUUID(), workspace.getId())))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verifyNoInteractions(syncer);
     }
 }

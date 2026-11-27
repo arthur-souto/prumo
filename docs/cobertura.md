@@ -40,12 +40,19 @@ O JaCoCo instrumenta o surefire (testes `*Test`) e o failsafe (testes `*IT`, que
 | `infrastructure.adapter.in.scheduler` | 0% | — |
 | `infrastructure.config` | 1,8% | 0% |
 
+### Evolução
+
+| PR | Linhas | Branches | Testes (`*Test` + `*IT`) |
+|---|---:|---:|---:|
+| PRU-24 (linha de base) | 90,5% | 89,5% | 522 + 50 |
+| PRU-25 (testes de serviço) | 92,7% | 89,5% | 528 + 59 |
+
 ### Lacunas que importam
 
 O que falta coberto e tem regra de negócio ou permissão, por ordem de prioridade:
 
-- **Casos de uso sem teste:** `SyncWorkspacePullRequestsService`, `ListConnectedRepositoriesService`, `GetGithubConnectionService` e `RemoveGithubTokenService` (0%). Entram na PRU-25.
-- **Adapters de persistência do GitHub:** `ConnectedRepositoryPersistenceAdapter`, `GithubConnectionPersistenceAdapter` e `GithubMapper` (0%). Hoje nenhum `*IT` passa por eles. Entram na PRU-25.
+- ~~**Casos de uso sem teste:** `SyncWorkspacePullRequestsService`, `ListConnectedRepositoriesService`, `GetGithubConnectionService` e `RemoveGithubTokenService`.~~ Cobertos na PRU-25.
+- ~~**Adapters de persistência do GitHub:** `ConnectedRepositoryPersistenceAdapter`, `GithubConnectionPersistenceAdapter` e `GithubMapper`.~~ Cobertos na PRU-25 (`GithubPersistenceIT`).
 - **Endpoints:** `MemberController` (0%) e os caminhos de erro e permissão dos controllers (50% de branches), além de `GlobalExceptionHandler` (59%). Entram na PRU-26.
 - **OAuth:** `LinkTokenAuthorizationRequestResolver` (0%), usado ao vincular o GitHub a uma conta existente. Entra na PRU-26.
 - **Agendadores:** `PullRequestPoller` e `SprintSnapshotRecorder` (0%). São finos e só delegam para casos de uso já testados.
