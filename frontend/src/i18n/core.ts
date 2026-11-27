@@ -1,4 +1,4 @@
-import { en, type MessageKey, type Messages } from "./en";
+import { en, type MessageKey, type Messages, type Plural } from "./en";
 import { pt } from "./pt";
 
 export type Locale = "en" | "pt";
@@ -35,10 +35,21 @@ export function dateLocale(locale: Locale) {
 
 export type Translate = (key: MessageKey, values?: Record<string, string | number>) => string;
 
+function isPlural(value: unknown): value is Plural {
+  return typeof value === "object" && value !== null && typeof (value as Plural).one === "string" && typeof (value as Plural).other === "string";
+}
+
+function pick(found: unknown, key: string, values?: Record<string, string | number>) {
+  if (typeof found === "string") return found;
+  if (!isPlural(found)) return key;
+
+  return Number(values?.[found.by ?? "count"]) === 1 ? found.one : found.other;
+}
+
 export function createTranslator(messages: Messages): Translate {
   return (key, values) => {
     const found = key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], messages);
-    const text = typeof found === "string" ? found : key;
+    const text = pick(found, key, values);
 
     return values ? text.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? `{${name}}`)) : text;
   };

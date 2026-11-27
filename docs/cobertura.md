@@ -108,5 +108,5 @@ O que ficou de fora:
 
 Achados durante os testes, ainda não corrigidos:
 
-- **Plural nas mensagens.** O i18n não trata plural, então aparece "1 branches created", "Delete 1 stories?" e "1 stories deleted". Em português acontece o mesmo.
+- ~~**Plural nas mensagens.** O i18n não trata plural, então aparece "1 branches created", "Delete 1 stories?" e "1 stories deleted". Em português acontece o mesmo.~~ Corrigido: as mensagens que dependem de um número têm forma de singular e de plural (veja *Idiomas* no README).
 - **Nome do drawer para leitores de tela.** O `Drawer` passa `aria-label="Story details"`, mas o Radix também liga o `aria-labelledby` ao título, e o título vence. O leitor de tela anuncia só "PRU-2".

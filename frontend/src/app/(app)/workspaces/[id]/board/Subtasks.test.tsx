@@ -135,10 +135,10 @@ describe("Subtasks", () => {
       await user.click(await screen.findByRole("checkbox", { name: "Select subtasks without a branch" }));
       await user.click(screen.getByRole("button", { name: "Create 2 branches" }));
 
-      expect(await screen.findByText("1 branches created")).toBeInTheDocument();
+      expect(await screen.findByText("1 branch created")).toBeInTheDocument();
       expect(screen.getByRole("alert")).toHaveTextContent("PRU-12: A branch with this name already exists.");
       expect(screen.getByRole("checkbox", { name: "Select PRU-12" })).toBeChecked();
-      expect(screen.getByRole("button", { name: "Create 1 branches" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Create 1 branch" })).toBeInTheDocument();
     });
   });
 

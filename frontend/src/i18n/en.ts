@@ -87,7 +87,7 @@ export const en = {
     logout: "Log out",
   },
   workspaces: {
-    progress: "{done} of {total} stories done",
+    progress: { by: "total", one: "{done} of {total} story done", other: "{done} of {total} stories done" },
     noStories: "No stories yet",
     progressLabel: "Progress of {name}",
     title: "Workspaces",
@@ -162,10 +162,10 @@ export const en = {
     setPriority: "Set priority…",
     delete: "Delete",
     clearSelection: "Clear selection",
-    deleteTitle: "Delete {count} stories?",
+    deleteTitle: { one: "Delete {count} story?", other: "Delete {count} stories?" },
     deleteLead: "This permanently deletes the selected stories and their pull request links.",
-    updated: "{count} stories updated",
-    deleted: "{count} stories deleted",
+    updated: { one: "{count} story updated", other: "{count} stories updated" },
+    deleted: { one: "{count} story deleted", other: "{count} stories deleted" },
     partial: "{failed} of {count} could not be updated",
     key: "Key",
     title: "Title",
@@ -227,7 +227,7 @@ export const en = {
       completed: "Completed",
       averageKey: "Average",
       sprint: "Sprint",
-      summary: "Velocity of the last {count} sprints, averaging {average} points completed",
+      summary: { one: "Velocity of the last sprint, averaging {average} points completed", other: "Velocity of the last {count} sprints, averaging {average} points completed" },
     },
     burndown: {
       title: "Burndown",
@@ -238,12 +238,12 @@ export const en = {
       day: "Day",
       showTable: "Show as table",
       failed: "Could not load the burndown.",
-      summary: "Burndown: {remaining} of {total} points remaining",
+      summary: { by: "total", one: "Burndown: {remaining} of {total} point remaining", other: "Burndown: {remaining} of {total} points remaining" },
     },
     complete: "Complete sprint",
     report: "Sprint report",
     moveTo: "Move to",
-    issueCount: "({count} stories)",
+    issueCount: { one: "({count} story)", other: "({count} stories)" },
     showMore: "Show {count} more",
     closedSprints: "Completed sprints",
     completedOf: "{completed} of {committed} pts completed",
@@ -256,9 +256,9 @@ export const en = {
     expand: "Expand",
     openSprint: "View sprint",
     pointsIn: { todo: "{count} pts to do", doing: "{count} pts in progress", done: "{count} pts done" },
-    daysLeft: "{count} days left",
-    heroOfTotal: "of {count} points done",
-    heroOfCommitted: "of {count} committed points done",
+    daysLeft: { one: "{count} day left", other: "{count} days left" },
+    heroOfTotal: { one: "of {count} point done", other: "of {count} points done" },
+    heroOfCommitted: { one: "of {count} committed point done", other: "of {count} committed points done" },
     heroPlanned: "points planned",
     storiesOf: "{done} of {total} done",
     daysLeftOf: "{left} of {total}",
@@ -273,13 +273,13 @@ export const en = {
     doneSeries: "Done",
     remainingSeries: "Remaining",
     pointsShort: "{count} pts",
-    tooltipPoints: "{points} pts ({share}%) · {count} stories",
-    tooltipAssignee: "{done} pts done · {remaining} pts remaining · {count} stories",
+    tooltipPoints: { one: "{points} pts ({share}%) · {count} story", other: "{points} pts ({share}%) · {count} stories" },
+    tooltipAssignee: { one: "{done} pts done · {remaining} pts remaining · {count} story", other: "{done} pts done · {remaining} pts remaining · {count} stories" },
     storiesStat: "Stories",
     remainingStat: "Remaining",
     daysLeftStat: "Days left",
     startsInStat: "Starts in",
-    daysTotal: "{count} days",
+    daysTotal: { one: "{count} day", other: "{count} days" },
     committedStat: "Committed",
     deliveryStat: "Delivered",
     durationStat: "Duration",
@@ -329,7 +329,7 @@ export const en = {
     storyTitlePlaceholder: "What needs to be done?",
     create: "Create",
     cancel: "Cancel",
-    cardCount: "{count} stories",
+    cardCount: { one: "{count} story", other: "{count} stories" },
     noMatchColumn: "No match",
     emptyColumn: "No stories",
     addColumn: "Add column",
@@ -349,7 +349,7 @@ export const en = {
     synced: "Pull requests updated",
     points: "{count} pts",
     hasRepository: "Repository linked",
-    subtaskProgress: "{done} of {total} subtasks done",
+    subtaskProgress: { by: "total", one: "{done} of {total} subtask done", other: "{done} of {total} subtasks done" },
     hasPullRequest: "Pull request linked",
     columnMenu: "Column options",
     dragHandle: "Drag to move",
@@ -407,13 +407,13 @@ export const en = {
     selectSubtask: "Select {key}",
     selectBranchless: "Select subtasks without a branch",
     subtasksSelected: "{count} selected",
-    createBranches: "Create {count} branches",
-    branchesCreated: "{count} branches created",
+    createBranches: { one: "Create {count} branch", other: "Create {count} branches" },
+    branchesCreated: { one: "{count} branch created", other: "{count} branches created" },
     branchFailedFor: "{key}: {reason}",
     copyBranch: "Copy branch name",
     branchCopied: "Branch name copied",
     noBranch: "No branch",
-    progress: "{done}/{total} subtasks done",
+    progress: { by: "total", one: "{done}/{total} subtask done", other: "{done}/{total} subtasks done" },
     remove: "Remove",
     save: "Save changes",
     saved: "Changes saved",
@@ -555,9 +555,21 @@ export const en = {
   },
 };
 
+/**
+ * A text that changes with a number: `one` when the number is 1, `other` for anything else (0 included, as English
+ * and Brazilian Portuguese say "0 stories" / "0 histórias"). The number is the `count` value, or the one named in `by`.
+ */
+export type Plural = { by?: string; one: string; other: string };
+
+/** One message: a plain text, or a text with singular and plural forms. */
+export type Text = string | Plural;
+
+type Catalog<T> = { [K in keyof T]: T[K] extends Text ? Text : Catalog<T[K]> };
+
 type Leaves<T, P extends string = ""> = {
-  [K in keyof T & string]: T[K] extends string ? `${P}${K}` : Leaves<T[K], `${P}${K}.`>;
+  [K in keyof T & string]: T[K] extends Text ? `${P}${K}` : Leaves<T[K], `${P}${K}.`>;
 }[keyof T & string];
 
-export type Messages = typeof en;
+/** The shape of a catalog. Each language may use plural forms where its grammar needs them, independently of English. */
+export type Messages = Catalog<typeof en>;
 export type MessageKey = Leaves<Messages>;
