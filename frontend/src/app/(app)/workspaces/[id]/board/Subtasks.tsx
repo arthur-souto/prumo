@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { errorMessage, useI18n } from "@/i18n/client";
 import { SUBTASK_STATUSES, type PullRequestState, type Repository, type Story, type Subtask, type SubtaskStatus } from "@/lib/board-types";
 import { isHttpUrl } from "@/lib/board-utils";
-import { sendJson } from "@/lib/client";
+import { sendJson, type ApiResult } from "@/lib/client";
 import styles from "./Subtasks.module.css";
 
 type SubtasksProps = {
@@ -102,7 +102,11 @@ export function Subtasks({ workspaceId, story, repository, onProgress }: Subtask
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState<Subtask | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [branching, setBranching] = useState(false);
   const canBranch = story.repositoryId !== null;
+  const branchless = (items ?? []).filter((subtask) => subtask.branchName === null);
+  const allSelected = branchless.length > 0 && branchless.every((subtask) => selected.has(subtask.key));
 
   const update = useCallback(
     (next: Subtask[]) => {
@@ -168,6 +172,52 @@ export function Subtasks({ workspaceId, story, repository, onProgress }: Subtask
     setCreating(false);
   }
 
+  function toggle(key: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(branchless.map((subtask) => subtask.key)));
+  }
+
+  async function branchFor(key: string): Promise<ApiResult<Subtask>> {
+    const suggestion = await sendJson<{ name: string }>(`${base}/subtasks/${key}/branch-suggestion`, "GET");
+    if (!suggestion.ok || !suggestion.data) return { ...suggestion, data: null };
+
+    return sendJson<Subtask>(`${base}/subtasks/${key}/branch`, "POST", { name: suggestion.data.name });
+  }
+
+  async function createBranches() {
+    if (items === null) return;
+
+    const keys = branchless.map((subtask) => subtask.key).filter((key) => selected.has(key));
+    if (keys.length === 0) return;
+
+    setBranching(true);
+    setError(undefined);
+    const created = new Map<string, Subtask>();
+    const failed: string[] = [];
+
+    // one at a time: GitHub rate-limits bursts of ref creation
+    for (const key of keys) {
+      const result = await branchFor(key);
+      if (result.ok && result.data) created.set(key, result.data);
+      else failed.push(t("story.branchFailedFor", { key, reason: errorMessage(t, result.code, result.reason) }));
+    }
+
+    update(items.map((subtask) => created.get(subtask.key) ?? subtask));
+    setSelected(new Set(keys.filter((key) => !created.has(key))));
+    setBranching(false);
+
+    if (created.size > 0) toast({ tone: "success", title: t("story.branchesCreated", { count: created.size }) });
+    if (failed.length > 0) setError(failed.join(" · "));
+  }
+
   async function changeStatus(subtask: Subtask, status: SubtaskStatus) {
     const result = await sendJson<Subtask>(`${base}/subtasks/${subtask.key}/status`, "PUT", { status });
 
@@ -223,11 +273,36 @@ export function Subtasks({ workspaceId, story, repository, onProgress }: Subtask
       ) : null}
       {error ? <Alert>{error}</Alert> : null}
 
+      {canBranch && branchless.length > 0 ? (
+        <div className={styles.bulk}>
+          <label className={styles.check}>
+            <input type="checkbox" checked={allSelected} disabled={branching} onChange={toggleAll} />
+            <span>{selected.size > 0 ? t("story.subtasksSelected", { count: selected.size }) : t("story.selectBranchless")}</span>
+          </label>
+          {selected.size > 0 ? (
+            <Button type="button" size="sm" icon={<GitBranch size={14} aria-hidden="true" />} loading={branching} onClick={() => void createBranches()}>
+              {t("story.createBranches", { count: selected.size })}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {items !== null && items.length === 0 ? <p className={styles.hint}>{t("story.subtaskNone")}</p> : null}
       <ul className={styles.list}>
         {(items ?? []).map((subtask) => (
           <li key={subtask.id} className={styles.item}>
             <div className={styles.row}>
+              {canBranch && subtask.branchName === null ? (
+                <input
+                  type="checkbox"
+                  className={styles.select}
+                  aria-label={t("story.selectSubtask", { key: subtask.key })}
+                  checked={selected.has(subtask.key)}
+                  disabled={branching}
+                  onChange={() => toggle(subtask.key)}
+                />
+              ) : canBranch ? (
+                <span className={styles.select} aria-hidden="true" />
+              ) : null}
               <Link className={styles.key} href={`/workspaces/${workspaceId}/subtasks/${subtask.key}`}>
                 {subtask.key}
               </Link>
