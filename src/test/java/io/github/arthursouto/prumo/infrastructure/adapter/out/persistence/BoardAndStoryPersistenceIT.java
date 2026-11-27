@@ -88,6 +88,18 @@ class BoardAndStoryPersistenceIT {
     }
 
     @Test
+    void deletingAColumnRemovesOnlyThatColumn() {
+        Board board = Board.withDefaults(workspaceId, "DEL");
+        BoardColumn qa = board.addColumn("QA");
+        boards.save(board);
+
+        boards.deleteColumn(qa.getId());
+
+        assertThat(boards.findByWorkspaceId(workspaceId).orElseThrow().getColumns()).extracting(BoardColumn::getName)
+                .containsExactly("To Do", "In Progress", "In Review", "Done");
+    }
+
+    @Test
     void theKeyPrefixIsUniqueAcrossTheSystem() {
         boards.save(Board.withDefaults(workspaceId, "UNQ"));
         UUID other = workspace("o-" + UUID.randomUUID());
