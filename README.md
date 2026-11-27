@@ -229,6 +229,15 @@ Para compilar e testar:
 
 O `verify` roda os testes unitários (`*Test`) e os de integração (`*IT`, que precisam do Docker para o Testcontainers) e gera o relatório de cobertura em `target/site/jacoco/index.html`. A linha de base e as lacunas estão em [docs/cobertura.md](docs/cobertura.md).
 
+## Integração contínua
+
+O workflow `.github/workflows/ci.yml` roda em todo pull request e a cada push na `main`, com dois jobs em paralelo:
+
+- **Back end:** `./mvnw verify`. Roda os testes unitários, os de integração (`*IT`, com o Docker do runner) e o relatório do JaCoCo.
+- **Front end:** `npm ci`, `typecheck`, testes com cobertura e `build`. A versão do Node vem de `frontend/.nvmrc`.
+
+Cada job publica um resumo da cobertura na página da execução e o relatório completo como artefato (`cobertura-back-end` e `cobertura-front-end`, guardados por 14 dias). Um push novo no mesmo PR cancela a execução anterior.
+
 ## Fitness functions
 
 Os testes de arquitetura ficam em `src/test/java/io/github/arthursouto/prumo/architecture` e rodam no `./mvnw verify`.
