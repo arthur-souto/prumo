@@ -1,4 +1,61 @@
-# prumo
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/prumo-garca-dark.svg">
+    <img src="frontend/public/brand/prumo-garca.svg" alt="Prumo" width="120">
+  </picture>
+</p>
+
+<h1 align="center">Prumo</h1>
+
+<p align="center">
+  <strong>Gestão de projetos para times de software, com o GitHub dentro do fluxo.</strong><br>
+  Quadro Kanban, sprints com burndown e velocity, subtarefas que viram branches e pull requests que movem o card sozinhos.
+</p>
+
+<p align="center">
+  <a href="https://github.com/arthur-souto/prumo/actions/workflows/ci.yml"><img src="https://github.com/arthur-souto/prumo/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Java-25-b07219" alt="Java 25">
+  <img src="https://img.shields.io/badge/Spring_Boot-4.1-6db33f" alt="Spring Boot 4.1">
+  <img src="https://img.shields.io/badge/Next.js-16-111111" alt="Next.js 16">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-1d6f5f" alt="Licença MIT"></a>
+</p>
+
+<p align="center">
+  <img src="docs/imagens/quadro.png" alt="Quadro Kanban do Prumo no tema escuro, com a sprint ativa no topo e cards mostrando subtarefas, pontos, prioridade e PRs" width="100%">
+</p>
+
+## Destaques
+
+- **Quadro Kanban** com arrastar e soltar, colunas configuráveis, filtros por sprint, prioridade, label e responsável, e busca com sugestões.
+- **Subtarefas ligadas ao GitHub:** cada subtarefa pode criar a própria branch (`feature/PRU-14-...`), uma de cada vez ou várias de uma vez. Os pull requests aparecem nela com o estado e, se a automação estiver ligada, movem a subtarefa e a história sozinhos.
+- **Sprints** com planejamento, burndown, velocity e relatório de encerramento.
+- **Histórico de atividade** de cada história, com o que foi feito por pessoas e pelo GitHub, e comentários em Markdown.
+- **Português e inglês**, tema claro e escuro.
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/imagens/sprints.png" alt="Tela de sprints no tema claro, com a sprint 1 e suas cinco histórias concluídas e o backlog vazio">
+      <p align="center"><sub><b>Planejamento</b>: a sprint ativa, os pontos por status e o backlog.</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/imagens/relatorio-da-sprint.png" alt="Relatório da sprint encerrada, com 23 pontos concluídos, o gráfico de burndown e os pontos por status">
+      <p align="center"><sub><b>Relatório da sprint</b>: burndown, entrega e pontos por status e por responsável.</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/imagens/subtarefas-e-prs.png" alt="Subtarefas de uma história, cada uma com a branch criada e o pull request mergeado">
+      <p align="center"><sub><b>Subtarefas</b>: a branch de cada uma e o PR com o estado, atualizados pelo GitHub.</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/imagens/atividade.png" alt="Histórico de atividade de uma história, com mudanças feitas por uma pessoa e pela automação do GitHub">
+      <p align="center"><sub><b>Atividade</b>: quem mudou o quê, inclusive o que o GitHub moveu sozinho.</sub></p>
+    </td>
+  </tr>
+</table>
+
+## Sobre o projeto
 
 Projeto gerado pelo [Archwright](https://github.com/arthur-souto/archwright), com a arquitetura montada desde o primeiro commit.
 
