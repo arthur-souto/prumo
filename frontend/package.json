@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  },
   "scripts": {
     "dev": "next dev -H localhost",
     "dev:lan": "LAN_ACCESS=1 next dev -H 0.0.0.0",

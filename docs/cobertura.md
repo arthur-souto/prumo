@@ -13,6 +13,8 @@ O JaCoCo instrumenta o surefire (testes `*Test`) e o failsafe (testes `*IT`, que
 
 > Até este PR os `*IT` não rodavam no `./mvnw verify`: não havia failsafe, e o surefire só pega `*Test`. Eles passaram a rodar agora (50 testes, todos passando).
 
+No CI, cada execução mostra a cobertura do back e do front no resumo da página do GitHub Actions e guarda os relatórios completos como artefatos (veja *Integração contínua* no README).
+
 ## Back end
 
 | | Testes | Falhas |
