@@ -9,14 +9,27 @@
   flex: none;
 }
 
+/* the heron is taller than wide (400 × 550), so only the height is set */
 .md .mark {
-  width: 1.875rem;
-  height: 1.875rem;
+  width: auto;
+  height: 2.25rem;
 }
 
 .lg .mark {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: auto;
+  height: 6rem;
+}
+
+.dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .light {
+  display: none;
+}
+
+:root[data-theme="dark"] .dark {
+  display: block;
 }
 
 .name {
@@ -32,4 +45,34 @@
 
 .lg .name {
   font-size: 1.75rem;
+}
+
+/* A wordmark under the heron: small capitals with wide tracking, set apart by a thin rule. */
+.stacked {
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stacked .name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-default);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.stacked .name::before,
+.stacked .name::after {
+  content: "";
+  width: 1.5rem;
+  height: 1px;
+  background: var(--border-default);
+}
+
+/* keeps the rule after the word the same distance away as the one before it, despite the tracking */
+.stacked .name::after {
+  margin-left: -0.32em;
 }

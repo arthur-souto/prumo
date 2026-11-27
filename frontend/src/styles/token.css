@@ -97,10 +97,6 @@
   --avatar-6: #3e7a8c;
   --avatar-text: #ffffff;
 
-  /* Logo */
-  --logo-bg: var(--color-primary-600);
-  --logo-accent: #ffffff;
-
   /* Typography (scale 12 to 24px) */
   --font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -220,9 +216,6 @@
   --lozenge-green-text: #b3d89a;
   --lozenge-yellow-bg: #47370a;
   --lozenge-yellow-text: #ecd27a;
-
-  --logo-bg: #4bb496;
-  --logo-accent: #111412;
 
   --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
   --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);

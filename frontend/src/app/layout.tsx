@@ -13,6 +13,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: "Prumo", template: "%s | Prumo" },
     description: t("meta.description"),
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+        // the light icon in both themes: it has its own background, so it stands out on light and dark tabs alike
+        { url: "/icons/icon.svg", type: "image/svg+xml" },
+      ],
+      apple: "/icons/apple-touch-icon.png",
+    },
   };
 }
 

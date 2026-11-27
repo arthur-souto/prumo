@@ -12,7 +12,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
     <main className={styles.page}>
       <div className={styles.card}>
         <div className={styles.brand}>
-          <Logo size="lg" />
+          <Logo size="lg" layout="stacked" />
         </div>
         {children}
       </div>
