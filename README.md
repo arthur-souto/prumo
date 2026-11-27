@@ -211,6 +211,8 @@ Para compilar e testar:
 ./mvnw verify
 ```
 
+O `verify` roda os testes unitários (`*Test`) e os de integração (`*IT`, que precisam do Docker para o Testcontainers) e gera o relatório de cobertura em `target/site/jacoco/index.html`. A linha de base e as lacunas estão em [docs/cobertura.md](docs/cobertura.md).
+
 ## Fitness functions
 
 Os testes de arquitetura ficam em `src/test/java/io/github/arthursouto/prumo/architecture` e rodam no `./mvnw verify`.
