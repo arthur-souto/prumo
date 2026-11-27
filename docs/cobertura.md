@@ -106,7 +106,7 @@ O que ficou de fora:
 - **Arrastar e soltar** no quadro (o resto dos 47% do `BoardView`). O jsdom não calcula layout, então o dnd-kit não tem posições para trabalhar. Isso pede um teste de ponta a ponta no navegador (Playwright, por exemplo). Mover pelo drawer e pelo backlog está coberto.
 - Telas de sprint, configurações e repositórios, que não fazem parte dos fluxos críticos desta história.
 
-Achados durante os testes, ainda não corrigidos:
+Achados durante os testes:
 
 - ~~**Plural nas mensagens.** O i18n não trata plural, então aparece "1 branches created", "Delete 1 stories?" e "1 stories deleted". Em português acontece o mesmo.~~ Corrigido: as mensagens que dependem de um número têm forma de singular e de plural (veja *Idiomas* no README).
-- **Nome do drawer para leitores de tela.** O `Drawer` passa `aria-label="Story details"`, mas o Radix também liga o `aria-labelledby` ao título, e o título vence. O leitor de tela anuncia só "PRU-2".
+- ~~**Nome do drawer para leitores de tela.** O `Drawer` passa `aria-label="Story details"`, mas o Radix também liga o `aria-labelledby` ao título, e o título vence. O leitor de tela anuncia só "PRU-2".~~ Corrigido: o rótulo fica dentro do título, visível só para leitores de tela, e o painel é anunciado como "Story details: PRU-2".

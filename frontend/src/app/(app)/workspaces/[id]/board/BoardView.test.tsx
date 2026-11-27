@@ -35,8 +35,7 @@ function render({ initial = board({ stories: [login, reset, deploy] }), canManag
 const column = (name: string) => screen.getByRole("region", { name, hidden: true });
 // each column also has its own "Create story"; the toolbar one comes first
 const createButton = () => screen.getAllByRole("button", { name: "Create story" })[0];
-// Radix names the drawer after its title, which is the story key
-const drawer = (key: string) => screen.findByRole("dialog", { name: key });
+const drawer = (key: string) => screen.findByRole("dialog", { name: `Story details: ${key}` });
 
 describe("BoardView", () => {
   it("shows each story in its column", () => {
