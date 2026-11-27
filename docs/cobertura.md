@@ -81,6 +81,7 @@ Runner configurado na PRU-27: Vitest com jsdom e Testing Library (`npm run cover
 | PR | Statements | Branches | Linhas | Testes |
 |---|---:|---:|---:|---:|
 | PRU-27 (runner e testes de exemplo) | 2,5% | 2,8% | 2,6% | 18 |
+| PRU-28 (fluxos críticos) | 35,0% | 35,4% | 35,5% | 72 |
 
 Os testes de exemplo cobrem:
 - as traduções: o português tem as mesmas chaves e os mesmos placeholders do inglês;
@@ -88,4 +89,22 @@ Os testes de exemplo cobrem:
 - `sendJson`;
 - o `ConfirmDialog`, que confirma que portais do Radix, teclado e i18n funcionam no jsdom.
 
-Os fluxos críticos (backlog, quadro e detalhe) entram na PRU-28.
+### Fluxos críticos (PRU-28)
+
+| Tela | Linhas | O que os testes garantem |
+|---|---:|---|
+| Backlog (`BacklogView`) | 79% | Página, ordem e filtros vêm da URL; edição em linha manda a história inteira; ações em lote dizem quantas falharam; exclusão pede confirmação; tentar de novo; estados vazios |
+| Quadro (`BoardView`) | 53% | Cartões por coluna e filtrados pela URL; criar história (botão, atalho `c`, `?create=1`); abrir por `?story=`; mover pelo drawer; sincronizar PRs com erros por repositório; excluir coluna escolhendo o destino; ferramentas só para quem administra |
+| Detalhe da história (`StoryDrawer`) | 80% | Salvar só com mudanças e no formato da API; erros por campo; confirmação ao descartar edições; status, responsável e sprint; excluir pelo menu; GitHub |
+| Subtarefas (`Subtasks`) | 85% | Criar com e sem branch; branches em lote, uma por vez, mantendo selecionadas as que falharam; status e exclusão |
+| Detalhe da subtarefa (`SubtaskView`) | 90% | Salvar; status; branch sugerida ou digitada e erro do GitHub; voltar ao quadro depois de excluir |
+
+O que ficou de fora:
+
+- **Arrastar e soltar** no quadro (o resto dos 47% do `BoardView`). O jsdom não calcula layout, então o dnd-kit não tem posições para trabalhar. Isso pede um teste de ponta a ponta no navegador (Playwright, por exemplo). Mover pelo drawer e pelo backlog está coberto.
+- Telas de sprint, configurações e repositórios, que não fazem parte dos fluxos críticos desta história.
+
+Achados durante os testes, ainda não corrigidos:
+
+- **Plural nas mensagens.** O i18n não trata plural, então aparece "1 branches created", "Delete 1 stories?" e "1 stories deleted". Em português acontece o mesmo.
+- **Nome do drawer para leitores de tela.** O `Drawer` passa `aria-label="Story details"`, mas o Radix também liga o `aria-labelledby` ao título, e o título vence. O leitor de tela anuncia só "PRU-2".
