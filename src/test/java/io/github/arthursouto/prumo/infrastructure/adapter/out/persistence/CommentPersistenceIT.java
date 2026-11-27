@@ -21,10 +21,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @Testcontainers
 @DataJpaTest
@@ -104,7 +106,8 @@ class CommentPersistenceIT {
         Comment reloaded = comments.findById(saved.getId()).orElseThrow();
         assertThat(reloaded.getBody()).isEqualTo("new");
         assertThat(reloaded.getEditedAt()).isNotNull();
-        assertThat(reloaded.getCreatedAt()).isEqualTo(saved.getCreatedAt());
+        // PostgreSQL keeps microseconds and rounds the rest, while Instant.now() has nanoseconds on Linux
+        assertThat(reloaded.getCreatedAt()).isCloseTo(saved.getCreatedAt(), within(1, ChronoUnit.MICROS));
     }
 
     @Test
