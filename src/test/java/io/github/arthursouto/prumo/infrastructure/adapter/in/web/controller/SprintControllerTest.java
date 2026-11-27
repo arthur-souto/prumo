@@ -20,6 +20,7 @@ import io.github.arthursouto.prumo.application.port.in.result.VelocitySprint;
 import io.github.arthursouto.prumo.application.port.in.command.ListSprintsQuery;
 import io.github.arthursouto.prumo.application.port.in.command.PlanStoryCommand;
 import io.github.arthursouto.prumo.application.port.in.command.SprintCommand;
+import io.github.arthursouto.prumo.application.port.in.command.UpdateSprintCommand;
 import io.github.arthursouto.prumo.application.port.in.result.SprintView;
 import io.github.arthursouto.prumo.application.port.out.result.PageResult;
 import io.github.arthursouto.prumo.domain.exceptions.BusinessRuleException;
@@ -178,6 +179,56 @@ class SprintControllerTest {
         }
 
         verifyNoInteractions(createSprint);
+    }
+
+    @Test
+    void updatesTheNameGoalAndDatesOfASprint() throws Exception {
+        Sprint sprint = sprint();
+        sprint.update("Sprint 7b", null, START, END.plusDays(1));
+        when(updateSprint.execute(new UpdateSprintCommand(userId, workspaceId, sprint.getId(), "Sprint 7b", null, START, END.plusDays(1))))
+                .thenReturn(new SprintView(sprint, 3, 8, 0));
+
+        mockMvc.perform(put(base + "/sprints/" + sprint.getId()).principal(principal()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Sprint 7b\",\"startDate\":\"2026-12-01\",\"endDate\":\"2026-12-15\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Sprint 7b"))
+                .andExpect(jsonPath("$.endDate").value("2026-12-15"))
+                .andExpect(jsonPath("$.storyCount").value(3));
+    }
+
+    @Test
+    void anUpdateWithTheEndBeforeTheStartNeverReachesTheUseCase() throws Exception {
+        mockMvc.perform(put(base + "/sprints/" + UUID.randomUUID()).principal(principal()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"S\",\"startDate\":\"2026-12-14\",\"endDate\":\"2026-12-01\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("endOnOrAfterStart"));
+
+        verifyNoInteractions(updateSprint);
+    }
+
+    @Test
+    void startsAPlannedSprintWithTheCommittedPoints() throws Exception {
+        Sprint sprint = sprint();
+        sprint.start(13);
+        when(startSprint.execute(new SprintCommand(userId, workspaceId, sprint.getId()))).thenReturn(new SprintView(sprint, 4, 13, 0));
+
+        mockMvc.perform(post(base + "/sprints/" + sprint.getId() + "/start").principal(principal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("ACTIVE"))
+                .andExpect(jsonPath("$.committedPoints").value(13));
+    }
+
+    @Test
+    void closesTheActiveSprintWithTheCompletedPoints() throws Exception {
+        Sprint sprint = sprint();
+        sprint.start(13);
+        sprint.close(8);
+        when(closeSprint.execute(new SprintCommand(userId, workspaceId, sprint.getId()))).thenReturn(new SprintView(sprint, 4, 13, 8));
+
+        mockMvc.perform(post(base + "/sprints/" + sprint.getId() + "/close").principal(principal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("CLOSED"))
+                .andExpect(jsonPath("$.completedPoints").value(8));
     }
 
     @Test
