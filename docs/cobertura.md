@@ -46,6 +46,7 @@ O JaCoCo instrumenta o surefire (testes `*Test`) e o failsafe (testes `*IT`, que
 |---|---:|---:|---:|
 | PRU-24 (linha de base) | 90,5% | 89,5% | 522 + 50 |
 | PRU-25 (testes de serviço) | 92,7% | 89,5% | 528 + 59 |
+| PRU-26 (testes de endpoint) | 98,6% | 91,8% | 536 + 67 |
 
 ### Lacunas que importam
 
@@ -53,11 +54,25 @@ O que falta coberto e tem regra de negócio ou permissão, por ordem de priorida
 
 - ~~**Casos de uso sem teste:** `SyncWorkspacePullRequestsService`, `ListConnectedRepositoriesService`, `GetGithubConnectionService` e `RemoveGithubTokenService`.~~ Cobertos na PRU-25.
 - ~~**Adapters de persistência do GitHub:** `ConnectedRepositoryPersistenceAdapter`, `GithubConnectionPersistenceAdapter` e `GithubMapper`.~~ Cobertos na PRU-25 (`GithubPersistenceIT`).
-- **Endpoints:** `MemberController` (0%) e os caminhos de erro e permissão dos controllers (50% de branches), além de `GlobalExceptionHandler` (59%). Entram na PRU-26.
-- **OAuth:** `LinkTokenAuthorizationRequestResolver` (0%), usado ao vincular o GitHub a uma conta existente. Entra na PRU-26.
+- ~~**Endpoints:** `MemberController`, edição/início/encerramento de sprint e `GlobalExceptionHandler`.~~ Cobertos na PRU-26.
+- ~~**Cadeia de segurança e permissões ponta a ponta:**~~ cobertas na PRU-26 pelo `SecurityIT` (veja abaixo), inclusive o `LinkTokenAuthorizationRequestResolver`.
 - **Agendadores:** `PullRequestPoller` e `SprintSnapshotRecorder` (0%). São finos e só delegam para casos de uso já testados.
 
-Não vale a pena perseguir cobertura em `infrastructure.config` (wiring de beans, `SecurityConfig`, `JwtConfig`), `LoginOpenApiCustomizer` e `PrumoApplication`. Eles são exercitados indiretamente quando a aplicação sobe, e a cadeia de segurança já é coberta pelos testes de controller com `spring-security-test`.
+- **`domain.model.project.ProjectRole`** (0%): não é usado em lugar nenhum. Candidato a remoção, fora do escopo dos testes.
+
+### Segurança
+
+Os testes de controller usam `MockMvcBuilders.standaloneSetup`, que **não passa pela cadeia de segurança**: eles recebem o usuário pronto e só verificam o mapeamento de status. Até a PRU-26 nada garantia que a API exige token ou que as rotas públicas continuam públicas.
+
+O `SecurityIT` sobe a aplicação inteira (`@SpringBootTest`, PostgreSQL via Testcontainers e um par de chaves RSA gerado no teste, já que `keys/` não é versionado) e cobre:
+
+- 401 sem token e com token malformado, assinado por outra chave, expirado ou de outro emissor;
+- login pelo filtro JSON real, inclusive credenciais erradas;
+- rotas públicas sem token: JWKS (sem a chave privada), `/actuator/health` e `/v3/api-docs` com o endpoint de login;
+- permissões ponta a ponta: quem não é do workspace recebe 404 sem descobrir que ele existe, membro lê mas não altera (403), admin altera e só o dono exclui;
+- o `link_token` do login com GitHub guardado na sessão e descartado num login comum.
+
+Por subir a aplicação, ele também cobre `infrastructure.config` (wiring dos casos de uso, `SecurityConfig`, `JwtConfig`) e o `LoginOpenApiCustomizer`.
 
 ## Front end
 
